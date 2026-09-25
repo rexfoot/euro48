@@ -1,0 +1,22 @@
+name: Euro48 worker
+
+on:
+  schedule:
+    - cron: "*/12 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger worker endpoint
+        run: |
+          status=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            "https://euro48.com/api/worker/run" \
+            -H "Authorization: Bearer ${{ secrets.WORKER_SECRET }}")
+          echo "HTTP status: $status"
+          cat response.json
+          if [ "$status" -ne 200 ]; then
+            echo "Worker call failed"
+            exit 1
+          fi
