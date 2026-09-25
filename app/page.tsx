@@ -1,18 +1,29 @@
-export default function Home() {
+import { getVisibleOffers } from "@/lib/offers";
+import { countsByCity, countsByCountry } from "@/lib/aggregate";
+import { Ticker } from "@/components/Ticker";
+import { GlobeView } from "@/components/GlobeView";
+import { Counter } from "@/components/Counter";
+import { CountryGrid } from "@/components/CountryGrid";
+
+export const revalidate = 60;
+
+export default async function Home() {
+  const offers = await getVisibleOffers({ limit: 500 });
+  const cityCounts = countsByCity(offers);
+  const countryCounts = countsByCountry(offers);
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
-      <span className="rounded-full border border-border bg-panel px-4 py-1 text-xs uppercase tracking-widest text-muted">
-        Phase 0 — scaffold
-      </span>
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-        Euro<span className="text-accent-amber">48</span>
-      </h1>
-      <p className="max-w-md text-muted">
-        Les offres d&apos;Europe des 48 dernières heures. Sans doublons.
-      </p>
-      <p className="max-w-md text-sm text-muted">
-        Ofertas de Europa de las últimas 48 horas. Sin repeticiones. — Europe&apos;s jobs from the last 48 hours. No duplicates.
-      </p>
+    <main className="flex flex-1 flex-col">
+      <Ticker offers={offers.slice(0, 30)} />
+
+      <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
+        <Counter count={offers.length} />
+        <GlobeView cityCounts={cityCounts} />
+      </section>
+
+      <section className="mx-auto w-full max-w-5xl flex-1 px-4 pb-12">
+        <CountryGrid counts={countryCounts} />
+      </section>
     </main>
   );
 }

@@ -73,6 +73,11 @@ export async function getVisibleOffers(filters: {
   );
 }
 
+export async function getOfferById(id: string): Promise<Offer | null> {
+  const rows = await query<Offer>(`SELECT * FROM offers WHERE id = $1 LIMIT 1`, [id]);
+  return rows[0] ?? null;
+}
+
 export async function countVisibleOffers(): Promise<number> {
   const rows = await query<{ count: string }>(
     `SELECT count(*) FROM offers WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
