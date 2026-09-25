@@ -1,12 +1,14 @@
 import { CITIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "../constants";
 import { normalizeForFingerprint } from "../fingerprint";
+import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
 const SEARCH_URL = "https://europa.eu/eures/api/jv-searchengine/public/jv-search/search";
 const DETAIL_URL = "https://europa.eu/eures/api/jv-searchengine/public/jv/id/";
 const PORTAL_URL = "https://europa.eu/eures/portal/jv-se/jv-details/";
 
-const RESULTS_PER_COUNTRY = Number(process.env.EURES_RESULTS_PER_COUNTRY ?? 10);
+const RESULTS_PER_COUNTRY = Number(process.env.EURES_RESULTS_PER_COUNTRY ?? 8);
+const DETAIL_CONCURRENCY = Number(process.env.EURES_DETAIL_CONCURRENCY ?? 5);
 
 type EuresSearchResult = {
   jvs: { id: string; creationDate: number }[];
@@ -31,10 +33,6 @@ type EuresProfile = {
 type EuresDetail = {
   jvProfiles: Record<string, EuresProfile>;
 };
-
-async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function matchCity(rawCityName: string, country: CountryCode): string | null {
   const candidate = rawCityName.split(/[,/(]/)[0].trim();
@@ -124,27 +122,26 @@ export async function fetchEuresOffersForCountry(country: CountryCode): Promise<
     return [];
   }
 
-  const offers: NewOffer[] = [];
+  const jvs = search.jvs ?? [];
 
-  for (const jv of search.jvs ?? []) {
+  const built = await mapWithConcurrency(jvs, DETAIL_CONCURRENCY, async (jv): Promise<NewOffer | null> => {
     const detail = await fetchDetail(jv.id);
-    await sleep(120);
-    if (!detail?.jvProfiles) continue;
+    if (!detail?.jvProfiles) return null;
 
     const lang = Object.keys(detail.jvProfiles)[0];
     const profile = detail.jvProfiles[lang];
-    if (!profile) continue;
+    if (!profile) return null;
 
     const location = profile.locations?.find((l) => l.cityName);
-    if (!location?.cityName) continue;
+    if (!location?.cityName) return null;
 
     const city = matchCity(location.cityName, country);
-    if (!city) continue;
+    if (!city) return null;
 
     const specialty = matchSpecialty(profile.title);
-    if (!specialty) continue;
+    if (!specialty) return null;
 
-    offers.push({
+    return {
       id: `eures:${jv.id}`,
       titleOriginal: profile.title,
       titleEn: profile.title,
@@ -161,8 +158,8 @@ export async function fetchEuresOffersForCountry(country: CountryCode): Promise<
       url: extractApplyUrl(profile, jv.id, lang),
       source: "eures",
       publishedAt: new Date(jv.creationDate),
-    });
-  }
+    };
+  });
 
-  return offers;
+  return built.filter((offer): offer is NewOffer => offer !== null);
 }
