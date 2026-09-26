@@ -62,6 +62,8 @@ export const CITIES: Record<
 
   Dublin: { country: "IE", lat: 53.3498, lng: -6.2603 },
   Cork: { country: "IE", lat: 51.8985, lng: -8.4756 },
+  Galway: { country: "IE", lat: 53.2707, lng: -9.0568 },
+  Limerick: { country: "IE", lat: 52.6638, lng: -8.6267 },
 
   Paris: { country: "FR", lat: 48.8566, lng: 2.3522 },
   Lyon: { country: "FR", lat: 45.764, lng: 4.8357 },
@@ -89,15 +91,22 @@ export const CITIES: Record<
 
   Oslo: { country: "NO", lat: 59.9139, lng: 10.7522 },
   Bergen: { country: "NO", lat: 60.3913, lng: 5.3221 },
+  Trondheim: { country: "NO", lat: 63.4305, lng: 10.3951 },
+  Stavanger: { country: "NO", lat: 58.97, lng: 5.7331 },
 
   Copenhagen: { country: "DK", lat: 55.6761, lng: 12.5683 },
   Aarhus: { country: "DK", lat: 56.1629, lng: 10.2039 },
+  Odense: { country: "DK", lat: 55.4038, lng: 10.4024 },
+  Aalborg: { country: "DK", lat: 57.0488, lng: 9.9217 },
 
   Stockholm: { country: "SE", lat: 59.3293, lng: 18.0686 },
   Gothenburg: { country: "SE", lat: 57.7089, lng: 11.9746 },
   Malmö: { country: "SE", lat: 55.605, lng: 13.0038 },
+  Uppsala: { country: "SE", lat: 59.8586, lng: 17.6389 },
 
   Helsinki: { country: "FI", lat: 60.1699, lng: 24.9384 },
+  Tampere: { country: "FI", lat: 61.4978, lng: 23.761 },
+  Turku: { country: "FI", lat: 60.4518, lng: 22.2666 },
 
   Reykjavik: { country: "IS", lat: 64.1466, lng: -21.9426 },
 };
@@ -115,37 +124,37 @@ export const SPECIALTIES = [
   {
     id: "hospitality",
     name: { fr: "Hôtellerie / tourisme", es: "Hostelería / turismo", en: "Hospitality / tourism" },
-    keywords: ["hotel", "restaurant", "tourism", "hospitality", "hôtellerie", "hosteleria", "turismo", "waiter", "chef", "cocinero", "serveur"],
+    keywords: ["hotel", "restaurant", "tourism", "hospitality", "hôtellerie", "hosteleria", "turismo", "waiter", "chef", "cocinero", "serveur", "hotell", "restaurang", "ravintola"],
   },
   {
     id: "logistics",
     name: { fr: "Logistique / entrepôt", es: "Logística / almacén", en: "Logistics / warehouse" },
-    keywords: ["logistics", "warehouse", "entrepôt", "almacen", "almacén", "logistique", "fulfillment", "picker", "magazijn", "lager"],
+    keywords: ["logistics", "warehouse", "entrepôt", "almacen", "almacén", "logistique", "fulfillment", "picker", "magazijn", "lager", "logistik", "varasto"],
   },
   {
     id: "healthcare",
     name: { fr: "Santé / soins", es: "Salud / cuidados", en: "Healthcare / care" },
-    keywords: ["nurse", "health", "care", "santé", "soins", "salud", "enfermero", "infirmier", "pflege", "zorg", "caregiver"],
+    keywords: ["nurse", "health", "care", "santé", "soins", "salud", "enfermero", "infirmier", "pflege", "zorg", "caregiver", "sjuksköterska", "läkare", "sykepleier", "lege", "sygeplejerske", "læge", "sairaanhoitaja", "lääkäri", "terveys", "helse"],
   },
   {
     id: "construction",
     name: { fr: "Construction", es: "Construcción", en: "Construction" },
-    keywords: ["construction", "construccion", "bau", "bouw", "builder", "electrician", "plumber", "mason", "albañil", "maçon"],
+    keywords: ["construction", "construccion", "bau", "bouw", "builder", "electrician", "plumber", "mason", "albañil", "maçon", "bygg", "byggnad", "rakennus"],
   },
   {
     id: "retail",
     name: { fr: "Commerce / retail", es: "Comercio / retail", en: "Retail / commerce" },
-    keywords: ["retail", "commerce", "comercio", "shop", "store", "vendeur", "vendedor", "cashier", "verkauf", "winkel"],
+    keywords: ["retail", "commerce", "comercio", "shop", "store", "vendeur", "vendedor", "cashier", "verkauf", "winkel", "butik", "butikk", "försäljning", "salg", "myyjä", "kauppa"],
   },
   {
     id: "industry",
     name: { fr: "Industrie / maintenance", es: "Industria / mantenimiento", en: "Industry / maintenance" },
-    keywords: ["industry", "industria", "maintenance", "mantenimiento", "manufacturing", "technicien", "tecnico", "industrie", "produktion"],
+    keywords: ["industry", "industria", "maintenance", "mantenimiento", "manufacturing", "technicien", "tecnico", "industrie", "produktion", "underhåll", "vedlikehold", "vedligeholdelse", "teollisuus"],
   },
   {
     id: "transport",
     name: { fr: "Transport / conducteurs", es: "Transporte / conductores", en: "Transport / drivers" },
-    keywords: ["driver", "conducteur", "conductor", "transport", "chauffeur", "trucker", "delivery", "fahrer", "chofer"],
+    keywords: ["driver", "conducteur", "conductor", "transport", "chauffeur", "trucker", "delivery", "fahrer", "chofer", "förare", "sjåfør", "chauffør", "kuljettaja"],
   },
   {
     id: "it",

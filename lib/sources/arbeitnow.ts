@@ -1,9 +1,12 @@
 import { LANGUAGE_BY_COUNTRY } from "../constants";
 import { matchAnyCity, matchSpecialty } from "../classify";
+import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
-const URL = "https://www.arbeitnow.com/api/job-board-api?page=1";
+const BASE_URL = "https://www.arbeitnow.com/api/job-board-api";
 const FETCH_TIMEOUT_MS = 20_000;
+const PAGES_PER_RUN = Number(process.env.ARBEITNOW_PAGES_PER_RUN ?? 3);
+const PAGE_CONCURRENCY = 2;
 
 type ArbeitnowJob = {
   slug: string;
@@ -20,49 +23,54 @@ type ArbeitnowResponse = {
   data?: ArbeitnowJob[];
 };
 
-// Free, public, no auth, no documented quota — a single page (page=1) is
-// plenty since Arbeitnow itself only refreshes hourly.
-export async function fetchArbeitnowOffers(): Promise<NewOffer[]> {
-  let data: ArbeitnowResponse;
+async function fetchPage(page: number): Promise<ArbeitnowJob[]> {
   try {
-    const res = await fetch(URL, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    const res = await fetch(`${BASE_URL}?page=${page}`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (res.status === 429) return [];
     if (!res.ok) return [];
-    data = (await res.json()) as ArbeitnowResponse;
+    const data = (await res.json()) as ArbeitnowResponse;
+    return data.data ?? [];
   } catch {
     return [];
   }
+}
 
-  const jobs = data.data ?? [];
+function build(job: ArbeitnowJob): NewOffer | null {
+  const parts = job.location.split(",").map((p) => p.trim()).filter(Boolean);
+  const match = matchAnyCity(parts);
+  if (!match) return null;
+  const { city, country } = match;
 
-  return jobs
-    .map((job): NewOffer | null => {
-      const parts = job.location.split(",").map((p) => p.trim()).filter(Boolean);
-      const match = matchAnyCity(parts);
-      if (!match) return null;
-      const { city, country } = match;
+  const specialty = matchSpecialty(job.title);
+  if (!specialty) return null;
 
-      const specialty = matchSpecialty(job.title);
-      if (!specialty) return null;
+  return {
+    id: `arbeitnow:${job.slug}`,
+    titleOriginal: job.title,
+    titleEn: job.title,
+    titleFr: job.title,
+    titleEs: job.title,
+    company: job.company_name || "—",
+    countryCode: country,
+    city,
+    specialty,
+    contractType: job.job_types?.length ? job.job_types.join(", ") : null,
+    salaryRaw: null,
+    remote: job.remote,
+    languageOfAd: LANGUAGE_BY_COUNTRY[country] ?? "en",
+    url: job.url,
+    source: "arbeitnow",
+    publishedAt: new Date(job.created_at * 1000),
+  };
+}
 
-      return {
-        id: `arbeitnow:${job.slug}`,
-        titleOriginal: job.title,
-        titleEn: job.title,
-        titleFr: job.title,
-        titleEs: job.title,
-        company: job.company_name || "—",
-        countryCode: country,
-        city,
-        specialty,
-        contractType: job.job_types?.length ? job.job_types.join(", ") : null,
-        salaryRaw: null,
-        remote: job.remote,
-        languageOfAd: LANGUAGE_BY_COUNTRY[country] ?? "en",
-        url: job.url,
-        source: "arbeitnow",
-        publishedAt: new Date(job.created_at * 1000),
-      };
-    })
-    .filter((offer): offer is NewOffer => offer !== null);
+// Free, public, no auth, no documented quota. Arbeitnow sorts by
+// created_at desc and refreshes hourly, so a few pages per run cover a
+// meaningfully wider slice than page 1 alone without hammering it.
+export async function fetchArbeitnowOffers(): Promise<NewOffer[]> {
+  const pages = Array.from({ length: PAGES_PER_RUN }, (_, i) => i + 1);
+  const perPage = await mapWithConcurrency(pages, PAGE_CONCURRENCY, fetchPage);
+  const jobs = perPage.flat();
+
+  return jobs.map(build).filter((offer): offer is NewOffer => offer !== null);
 }

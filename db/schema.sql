@@ -38,3 +38,12 @@ ALTER TABLE offers
 ALTER TABLE offers
   ADD CONSTRAINT offers_specialty_allowed
   CHECK (specialty IN ('hospitality','logistics','healthcare','construction','retail','industry','transport','it'));
+
+-- Per-source rotation state (e.g. "which country/page did EURES/Adzuna
+-- fetch last run") so successive worker runs sample a wider slice of each
+-- source instead of re-fetching the same top results every time.
+CREATE TABLE IF NOT EXISTS worker_cursors (
+  source     TEXT PRIMARY KEY,
+  cursor     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -116,8 +116,20 @@ export function isUrgent(title: string, publishedAt: Date): boolean {
 export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: number; skipped: number }> {
   let inserted = 0;
   let skipped = 0;
+  const seenIds = new Set<string>();
 
   for (const offer of offers) {
+    // Same literal id observed twice in one batch (e.g. two nearby-city
+    // radius searches both matching the same posting) — the first pass
+    // already handles it; a second INSERT with the same id but a
+    // different fingerprint would hit the primary key, not the
+    // fingerprint conflict target, and crash the whole batch.
+    if (seenIds.has(offer.id)) {
+      skipped++;
+      continue;
+    }
+    seenIds.add(offer.id);
+
     if (!COUNTRY_CODES.includes(offer.countryCode)) {
       skipped++;
       continue;
@@ -138,48 +150,72 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       countryCode: offer.countryCode,
     });
 
-    const rows = await query(
-      `INSERT INTO offers (
-         id, title_original, title_en, title_fr, title_es, company,
-         country_code, city, specialty, contract_type, salary_raw, remote,
-         language_of_ad, url, source, published_at, fingerprint
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-       ON CONFLICT (fingerprint) DO UPDATE SET
-         title_original = EXCLUDED.title_original,
-         title_en = EXCLUDED.title_en,
-         title_fr = EXCLUDED.title_fr,
-         title_es = EXCLUDED.title_es,
-         url = EXCLUDED.url,
-         source = EXCLUDED.source,
-         published_at = EXCLUDED.published_at,
-         contract_type = EXCLUDED.contract_type,
-         salary_raw = EXCLUDED.salary_raw,
-         remote = EXCLUDED.remote
-       WHERE EXCLUDED.published_at > offers.published_at
-       RETURNING id`,
-      [
-        offer.id,
-        offer.titleOriginal,
-        offer.titleEn,
-        offer.titleFr,
-        offer.titleEs,
-        offer.company,
-        offer.countryCode,
-        offer.city,
-        offer.specialty,
-        offer.contractType ?? null,
-        offer.salaryRaw ?? null,
-        offer.remote ?? false,
-        offer.languageOfAd,
-        offer.url,
-        offer.source,
-        offer.publishedAt.toISOString(),
-        fingerprint,
-      ]
-    );
+    const values = [
+      offer.id,
+      offer.titleOriginal,
+      offer.titleEn,
+      offer.titleFr,
+      offer.titleEs,
+      offer.company,
+      offer.countryCode,
+      offer.city,
+      offer.specialty,
+      offer.contractType ?? null,
+      offer.salaryRaw ?? null,
+      offer.remote ?? false,
+      offer.languageOfAd,
+      offer.url,
+      offer.source,
+      offer.publishedAt.toISOString(),
+      fingerprint,
+    ];
 
-    if (rows.length > 0) inserted++;
-    else skipped++;
+    try {
+      const rows = await query(
+        `INSERT INTO offers (
+           id, title_original, title_en, title_fr, title_es, company,
+           country_code, city, specialty, contract_type, salary_raw, remote,
+           language_of_ad, url, source, published_at, fingerprint
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         ON CONFLICT (fingerprint) DO UPDATE SET
+           title_original = EXCLUDED.title_original,
+           title_en = EXCLUDED.title_en,
+           title_fr = EXCLUDED.title_fr,
+           title_es = EXCLUDED.title_es,
+           url = EXCLUDED.url,
+           source = EXCLUDED.source,
+           published_at = EXCLUDED.published_at,
+           contract_type = EXCLUDED.contract_type,
+           salary_raw = EXCLUDED.salary_raw,
+           remote = EXCLUDED.remote
+         WHERE EXCLUDED.published_at > offers.published_at
+         RETURNING id`,
+        values
+      );
+      if (rows.length > 0) inserted++;
+      else skipped++;
+    } catch (err) {
+      // Same id, different fingerprint: happens when the same posting is
+      // re-observed under a different matched city (e.g. two cities'
+      // radius searches overlapping) in a later run than the one that
+      // first stored it. The fingerprint conflict target above can't also
+      // catch a primary-key collision, so handle it explicitly instead of
+      // letting the whole batch crash.
+      const isPkConflict =
+        (err as { code?: string; constraint?: string }).code === "23505" &&
+        (err as { code?: string; constraint?: string }).constraint === "offers_pkey";
+      if (!isPkConflict) throw err;
+
+      await query(
+        `UPDATE offers SET
+           title_original = $2, title_en = $3, title_fr = $4, title_es = $5,
+           city = $8, specialty = $9, contract_type = $10, salary_raw = $11, remote = $12,
+           url = $14, source = $15, published_at = $16, fingerprint = $17
+         WHERE id = $1 AND $16::timestamptz > published_at`,
+        values
+      );
+      skipped++;
+    }
   }
 
   return { inserted, skipped };

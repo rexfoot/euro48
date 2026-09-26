@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { COUNTRY_CODES } from "@/lib/constants";
-import { fetchEuresOffersForCountry } from "@/lib/sources/eures";
-import { ADZUNA_COUNTRIES, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
+import { fetchEuresOffersForCountry, EURES_MAX_PAGE } from "@/lib/sources/eures";
+import { ADZUNA_COUNTRIES, ADZUNA_MAX_PAGE, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
 import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
+import { getCursor, setCursor } from "@/lib/worker-state";
+import { makeDeadline } from "@/lib/time-budget";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -14,6 +16,9 @@ export const dynamic = "force-dynamic";
 const LINK_CHECK_BATCH = 15;
 const COUNTRY_CONCURRENCY = 3;
 const LINK_CHECK_CONCURRENCY = 5;
+const EURES_TIME_BUDGET_MS = 20_000;
+
+type CountResult = { inserted: number; skipped: number };
 
 async function purgeExpired() {
   await query(`DELETE FROM offers WHERE published_at < now() - interval '72 hours'`);
@@ -49,27 +54,64 @@ async function purgeDeadLinks() {
   return results.filter(Boolean).length;
 }
 
+// Rotates which EURES results page each country fetches, one run at a
+// time, so successive 15-min runs sample a wider slice of "last 3 days"
+// than always re-fetching the same top results. Time-boxed: once we're
+// near the cron's 30s cutoff, remaining countries just wait for next run.
 async function runEures() {
+  const cursor = await getCursor<{ pageByCountry?: Record<string, number> }>("eures");
+  const pageByCountry = cursor.pageByCountry ?? {};
+  const isOverBudget = makeDeadline(EURES_TIME_BUDGET_MS);
+
   const perCountry = await mapWithConcurrency(COUNTRY_CODES, COUNTRY_CONCURRENCY, async (country) => {
-    const offers = await fetchEuresOffersForCountry(country);
+    const page = pageByCountry[country] ?? 1;
+    const offers = isOverBudget() ? [] : await fetchEuresOffersForCountry(country, page, isOverBudget);
     const result = await upsertOffers(offers);
-    return [country, result] as const;
+    const nextPage = (page % EURES_MAX_PAGE) + 1;
+    return [country, result, nextPage] as const;
   });
-  return Object.fromEntries(perCountry);
+
+  const results: Record<string, CountResult> = {};
+  const nextPageByCountry: Record<string, number> = {};
+  for (const [country, result, nextPage] of perCountry) {
+    results[country] = result;
+    nextPageByCountry[country] = nextPage;
+  }
+  await setCursor("eures", { pageByCountry: nextPageByCountry });
+  return results;
 }
 
-// One Adzuna country per call, rotated hourly (stateless: derived from the
-// clock) to respect the free-tier's 2500/month cap while still cycling
-// through all 8 supported countries every 8 hours. `country` lets a manual
-// call (authenticated the same as the cron) target one country for testing.
-async function runAdzuna(country?: string) {
-  const target =
-    country && ADZUNA_COUNTRIES.includes(country as (typeof ADZUNA_COUNTRIES)[number])
-      ? (country as (typeof ADZUNA_COUNTRIES)[number])
-      : ADZUNA_COUNTRIES[Math.floor(Date.now() / 3_600_000) % ADZUNA_COUNTRIES.length];
-  const offers = await fetchAdzunaOffersForCountry(target);
-  const result = await upsertOffers(offers);
-  return { [target]: result };
+const ADZUNA_SLOTS = ADZUNA_COUNTRIES.length * ADZUNA_MAX_PAGE;
+const ADZUNA_SLOTS_PER_RUN = 2;
+
+// Rotates (country, page) pairs via a DB cursor — 2 slots/run keeps us at
+// ~1440 calls/month, safely under Adzuna's 2500/month free-tier cap, while
+// cycling every supported country through both pages every ~4h. `country`
+// lets a manual call (authenticated the same as the cron) target one
+// country directly for testing, bypassing rotation.
+async function runAdzuna(countryOverride?: string) {
+  if (countryOverride && ADZUNA_COUNTRIES.includes(countryOverride as (typeof ADZUNA_COUNTRIES)[number])) {
+    const target = countryOverride as (typeof ADZUNA_COUNTRIES)[number];
+    const offers = await fetchAdzunaOffersForCountry(target, 1);
+    const result = await upsertOffers(offers);
+    return { [target]: result };
+  }
+
+  const cursor = await getCursor<{ index?: number }>("adzuna");
+  const startIndex = cursor.index ?? 0;
+  const results: Record<string, CountResult> = {};
+
+  for (let i = 0; i < ADZUNA_SLOTS_PER_RUN; i++) {
+    const slot = (startIndex + i) % ADZUNA_SLOTS;
+    const country = ADZUNA_COUNTRIES[Math.floor(slot / ADZUNA_MAX_PAGE)];
+    const page = (slot % ADZUNA_MAX_PAGE) + 1;
+    const offers = await fetchAdzunaOffersForCountry(country, page);
+    const result = await upsertOffers(offers);
+    results[`${country}_p${page}`] = result;
+  }
+
+  await setCursor("adzuna", { index: (startIndex + ADZUNA_SLOTS_PER_RUN) % ADZUNA_SLOTS });
+  return results;
 }
 
 async function runArbeitnow() {
@@ -84,7 +126,7 @@ async function runBundesagentur() {
   return { bundesagentur: result };
 }
 
-const SOURCES: Record<string, (country?: string) => Promise<Record<string, { inserted: number; skipped: number }>>> = {
+const SOURCES: Record<string, (country?: string) => Promise<Record<string, CountResult>>> = {
   eures: runEures,
   adzuna: runAdzuna,
   arbeitnow: runArbeitnow,

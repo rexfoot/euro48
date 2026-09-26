@@ -7,8 +7,9 @@ const SEARCH_URL = "https://europa.eu/eures/api/jv-searchengine/public/jv-search
 const DETAIL_URL = "https://europa.eu/eures/api/jv-searchengine/public/jv/id/";
 const PORTAL_URL = "https://europa.eu/eures/portal/jv-se/jv-details/";
 
-const RESULTS_PER_COUNTRY = Number(process.env.EURES_RESULTS_PER_COUNTRY ?? 8);
-const DETAIL_CONCURRENCY = Number(process.env.EURES_DETAIL_CONCURRENCY ?? 5);
+const RESULTS_PER_COUNTRY = Number(process.env.EURES_RESULTS_PER_COUNTRY ?? 25);
+const DETAIL_CONCURRENCY = Number(process.env.EURES_DETAIL_CONCURRENCY ?? 6);
+export const EURES_MAX_PAGE = 4; // rotated across runs — see route.ts
 
 type EuresSearchResult = {
   jvs: { id: string; creationDate: number }[];
@@ -62,10 +63,14 @@ async function fetchDetail(id: string): Promise<EuresDetail | null> {
   }
 }
 
-export async function fetchEuresOffersForCountry(country: CountryCode): Promise<NewOffer[]> {
+export async function fetchEuresOffersForCountry(
+  country: CountryCode,
+  page = 1,
+  isOverBudget: () => boolean = () => false
+): Promise<NewOffer[]> {
   const body = JSON.stringify({
     resultsPerPage: RESULTS_PER_COUNTRY,
-    page: 1,
+    page,
     sortSearch: "MOST_RECENT",
     keywords: [],
     publicationPeriod: "LAST_THREE_DAYS",
@@ -101,6 +106,7 @@ export async function fetchEuresOffersForCountry(country: CountryCode): Promise<
   const jvs = search.jvs ?? [];
 
   const built = await mapWithConcurrency(jvs, DETAIL_CONCURRENCY, async (jv): Promise<NewOffer | null> => {
+    if (isOverBudget()) return null;
     const detail = await fetchDetail(jv.id);
     if (!detail?.jvProfiles) return null;
 

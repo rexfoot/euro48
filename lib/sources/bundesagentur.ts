@@ -12,9 +12,9 @@ import type { NewOffer } from "../offers";
 // the site. Germany only: the agency has no data for other countries.
 const SEARCH_URL = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs";
 const API_KEY = "jobboerse-jobsuche";
-const RESULTS_PER_CITY = Number(process.env.BA_RESULTS_PER_CITY ?? 20);
-const RADIUS_KM = 15;
-const CITY_CONCURRENCY = 3;
+const RESULTS_PER_CITY = Number(process.env.BA_RESULTS_PER_CITY ?? 40);
+const RADIUS_KM = 25;
+const CITY_CONCURRENCY = 4;
 const FETCH_TIMEOUT_MS = 12_000;
 
 const DE_CITIES = citiesForCountry("DE");

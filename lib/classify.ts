@@ -4,12 +4,36 @@
 import { CITIES, SPECIALTIES, type CityName, type CountryCode, type SpecialtyId } from "./constants";
 import { normalizeForFingerprint } from "./fingerprint";
 
-// A handful of native-language city names that differ enough from our
-// (English) CITIES keys that accent-stripping alone won't match them.
-// Kept intentionally small — only names we've actually seen from a source.
+// Native-language / alternate spellings that differ from our (English)
+// CITIES keys by more than accents — sources often return these, and
+// without this table those offers were silently dropped for "unknown
+// city" even though the city is on our closed list (diagnosed 2026-09-26:
+// this was the single biggest reason whole countries showed near-zero
+// offers, e.g. EURES returning "GÖTEBORG" which never matched "Gothenburg").
 const CITY_ALIASES: Partial<Record<string, CityName>> = {
-  munchen: "Munich",
-  koln: "Cologne",
+  munchen: "Munich", muenchen: "Munich",
+  koln: "Cologne", koeln: "Cologne",
+  duesseldorf: "Düsseldorf",
+  wien: "Vienna",
+  geneve: "Geneva", genf: "Geneva", ginevra: "Geneva",
+  bale: "Basel", basle: "Basel",
+  bruxelles: "Brussels", brussel: "Brussels",
+  antwerpen: "Antwerp", anvers: "Antwerp",
+  gent: "Ghent", gand: "Ghent",
+  luik: "Liège",
+  "den haag": "The Hague", "s gravenhage": "The Hague",
+  sevilla: "Seville",
+  milano: "Milan",
+  roma: "Rome",
+  torino: "Turin",
+  firenze: "Florence",
+  venezia: "Venice",
+  napoli: "Naples",
+  goteborg: "Gothenburg",
+  kobenhavn: "Copenhagen",
+  arhus: "Aarhus",
+  alborg: "Aalborg",
+  helsingfors: "Helsinki",
 };
 
 function resolveCityName(normalizedCandidate: string): CityName | null {
@@ -19,15 +43,25 @@ function resolveCityName(normalizedCandidate: string): CityName | null {
   return CITY_ALIASES[normalizedCandidate] ?? null;
 }
 
-// Tries each candidate raw place name (most specific first) against the
-// closed city list for the given country. Returns the first match.
+// Splits a raw location string into every plausible place-name piece —
+// sources format this wildly differently, from "City, Region" to a full
+// multi-line address block (seen from EURES for Ireland). Try them all
+// instead of just the first segment, since the real city can be anywhere.
+function splitIntoPieces(raw: string): string[] {
+  return raw
+    .split(/[,/()\n]/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+// Tries every candidate raw place name against the closed city list for
+// the given country. Returns the first match.
 export function matchCityFromCandidates(candidates: string[], country: CountryCode): string | null {
   for (const raw of candidates) {
-    const candidate = raw.split(/[,/(]/)[0].trim();
-    if (!candidate) continue;
-
-    const cityName = resolveCityName(normalizeForFingerprint(candidate));
-    if (cityName && CITIES[cityName].country === country) return cityName;
+    for (const piece of splitIntoPieces(raw)) {
+      const cityName = resolveCityName(normalizeForFingerprint(piece));
+      if (cityName && CITIES[cityName].country === country) return cityName;
+    }
   }
   return null;
 }
@@ -36,16 +70,15 @@ export function matchCity(rawCityName: string, country: CountryCode): string | n
   return matchCityFromCandidates([rawCityName], country);
 }
 
-// For sources that don't tell us the country (e.g. Arbeitnow): tries each
-// already-split location part against the closed city list across all 15
-// countries. Safe by construction — only ever returns a listed city/country.
+// For sources that don't tell us the country (e.g. Arbeitnow): tries every
+// piece against the closed city list across all 15 countries. Safe by
+// construction — only ever returns a listed city/country.
 export function matchAnyCity(parts: string[]): { city: CityName; country: CountryCode } | null {
   for (const raw of parts) {
-    const candidate = raw.trim();
-    if (!candidate) continue;
-
-    const cityName = resolveCityName(normalizeForFingerprint(candidate));
-    if (cityName) return { city: cityName, country: CITIES[cityName].country };
+    for (const piece of splitIntoPieces(raw)) {
+      const cityName = resolveCityName(normalizeForFingerprint(piece));
+      if (cityName) return { city: cityName, country: CITIES[cityName].country };
+    }
   }
   return null;
 }

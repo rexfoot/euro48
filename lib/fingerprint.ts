@@ -29,7 +29,15 @@ const GENDER_PHRASES = [
 ];
 
 function stripAccents(input: string): string {
-  return input.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  // ø/æ/þ/ð aren't accented letters (no base+diacritic decomposition), so
+  // NFD alone leaves them untouched — map them by hand before it runs, or
+  // "København"/"Malmö"-style Nordic names get mangled instead of matched.
+  const preNormalized = input
+    .replace(/[øØ]/g, "o")
+    .replace(/[æÆ]/g, "ae")
+    .replace(/[đĐ]/g, "d")
+    .replace(/[þÞ]/g, "th");
+  return preNormalized.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 function stripGenderNoise(input: string): string {

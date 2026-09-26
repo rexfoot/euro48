@@ -9,6 +9,7 @@ const FETCH_TIMEOUT_MS = 15_000;
 // Countries Adzuna's API actually supports, verified live against our 15
 // (Adzuna returns UNSUPPORTED_COUNTRY for the rest: LU, IE, NO, DK, SE, FI, IS).
 export const ADZUNA_COUNTRIES: CountryCode[] = ["DE", "NL", "CH", "BE", "AT", "FR", "ES", "IT"];
+export const ADZUNA_MAX_PAGE = 2; // rotated across runs — see route.ts
 
 const CURRENCY_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
   CH: "CHF",
@@ -31,15 +32,16 @@ type AdzunaSearchResult = {
   results?: AdzunaJob[];
 };
 
-// One country per call, chosen by the caller (route.ts rotates hourly to
-// stay well under Adzuna's free-tier cap: 250/day but only 2500/month).
-export async function fetchAdzunaOffersForCountry(country: CountryCode): Promise<NewOffer[]> {
+// Country (and now page) chosen by the caller (route.ts rotates both via a
+// DB cursor) to stay well under Adzuna's free-tier cap: 250/day but only
+// 2500/month is the real ceiling.
+export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1): Promise<NewOffer[]> {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
   if (!appId || !appKey) return [];
   if (!ADZUNA_COUNTRIES.includes(country)) return [];
 
-  const url = new URL(`${BASE_URL}/${country.toLowerCase()}/search/1`);
+  const url = new URL(`${BASE_URL}/${country.toLowerCase()}/search/${page}`);
   url.searchParams.set("app_id", appId);
   url.searchParams.set("app_key", appKey);
   url.searchParams.set("results_per_page", String(RESULTS_PER_CALL));
