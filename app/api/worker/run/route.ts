@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { COUNTRY_CODES } from "@/lib/constants";
 import { fetchEuresOffersForCountry } from "@/lib/sources/eures";
+import { ADZUNA_COUNTRIES, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -46,6 +47,34 @@ async function purgeDeadLinks() {
   return results.filter(Boolean).length;
 }
 
+async function runEures() {
+  const perCountry = await mapWithConcurrency(COUNTRY_CODES, COUNTRY_CONCURRENCY, async (country) => {
+    const offers = await fetchEuresOffersForCountry(country);
+    const result = await upsertOffers(offers);
+    return [country, result] as const;
+  });
+  return Object.fromEntries(perCountry);
+}
+
+// One Adzuna country per call, rotated hourly (stateless: derived from the
+// clock) to respect the free-tier's 2500/month cap while still cycling
+// through all 8 supported countries every 8 hours. `country` lets a manual
+// call (authenticated the same as the cron) target one country for testing.
+async function runAdzuna(country?: string) {
+  const target =
+    country && ADZUNA_COUNTRIES.includes(country as (typeof ADZUNA_COUNTRIES)[number])
+      ? (country as (typeof ADZUNA_COUNTRIES)[number])
+      : ADZUNA_COUNTRIES[Math.floor(Date.now() / 3_600_000) % ADZUNA_COUNTRIES.length];
+  const offers = await fetchAdzunaOffersForCountry(target);
+  const result = await upsertOffers(offers);
+  return { [target]: result };
+}
+
+const SOURCES: Record<string, (country?: string) => Promise<Record<string, { inserted: number; skipped: number }>>> = {
+  eures: runEures,
+  adzuna: runAdzuna,
+};
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");
   const expected = `Bearer ${process.env.WORKER_SECRET}`;
@@ -53,15 +82,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const perCountry = await mapWithConcurrency(COUNTRY_CODES, COUNTRY_CONCURRENCY, async (country) => {
-    const offers = await fetchEuresOffersForCountry(country);
-    const result = await upsertOffers(offers);
-    return [country, result] as const;
-  });
-  const results = Object.fromEntries(perCountry);
+  const sourceParam = req.nextUrl.searchParams.get("source");
+  const run = sourceParam ? SOURCES[sourceParam] : SOURCES.eures;
+  if (!run) {
+    return NextResponse.json({ error: "unknown source" }, { status: 400 });
+  }
+
+  const countryParam = req.nextUrl.searchParams.get("country") ?? undefined;
+  const results = await run(countryParam);
 
   const deadLinksRemoved = await purgeDeadLinks();
   await purgeExpired();
 
-  return NextResponse.json({ status: "ok", results, deadLinksRemoved });
+  return NextResponse.json({ status: "ok", source: sourceParam ?? "eures", results, deadLinksRemoved });
 }

@@ -1,5 +1,5 @@
-import { CITIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "../constants";
-import { normalizeForFingerprint } from "../fingerprint";
+import type { CountryCode } from "../constants";
+import { matchCity, matchSpecialty } from "../classify";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -33,30 +33,6 @@ type EuresProfile = {
 type EuresDetail = {
   jvProfiles: Record<string, EuresProfile>;
 };
-
-function matchCity(rawCityName: string, country: CountryCode): string | null {
-  const candidate = rawCityName.split(/[,/(]/)[0].trim();
-  const normalizedCandidate = normalizeForFingerprint(candidate);
-
-  for (const cityName of Object.keys(CITIES) as (keyof typeof CITIES)[]) {
-    if (CITIES[cityName].country !== country) continue;
-    if (normalizeForFingerprint(cityName) === normalizedCandidate) return cityName;
-  }
-  return null;
-}
-
-function matchSpecialty(title: string): SpecialtyId | null {
-  const normalized = title.toLowerCase();
-  const tokens = new Set(normalized.match(/\p{L}+/gu) ?? []);
-
-  for (const specialty of SPECIALTIES) {
-    const hit = specialty.keywords.some((kw) =>
-      kw.includes(" ") ? normalized.includes(kw) : tokens.has(kw)
-    );
-    if (hit) return specialty.id;
-  }
-  return null;
-}
 
 function extractApplyUrl(profile: EuresProfile, id: string, lang: string): string {
   const raw = profile.applicationInstructions?.join(" ") ?? "";

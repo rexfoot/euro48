@@ -1,0 +1,103 @@
+import type { CountryCode } from "../constants";
+import { matchCityFromCandidates, matchSpecialty } from "../classify";
+import type { NewOffer } from "../offers";
+
+const BASE_URL = "https://api.adzuna.com/v1/api/jobs";
+const RESULTS_PER_CALL = Number(process.env.ADZUNA_RESULTS_PER_CALL ?? 50);
+const FETCH_TIMEOUT_MS = 15_000;
+
+// Countries Adzuna's API actually supports, verified live against our 15
+// (Adzuna returns UNSUPPORTED_COUNTRY for the rest: LU, IE, NO, DK, SE, FI, IS).
+export const ADZUNA_COUNTRIES: CountryCode[] = ["DE", "NL", "CH", "BE", "AT", "FR", "ES", "IT"];
+
+const CURRENCY_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
+  CH: "CHF",
+};
+
+const LANGUAGE_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
+  DE: "de", NL: "nl", CH: "de", BE: "fr", AT: "de", FR: "fr", ES: "es", IT: "it",
+};
+
+type AdzunaJob = {
+  id: string;
+  title: string;
+  company?: { display_name?: string };
+  location?: { display_name?: string; area?: string[] };
+  redirect_url: string;
+  created: string;
+  contract_type?: string;
+  contract_time?: string;
+  salary_min?: number;
+  salary_max?: number;
+};
+
+type AdzunaSearchResult = {
+  results?: AdzunaJob[];
+};
+
+// One country per call, chosen by the caller (route.ts rotates hourly to
+// stay well under Adzuna's free-tier cap: 250/day but only 2500/month).
+export async function fetchAdzunaOffersForCountry(country: CountryCode): Promise<NewOffer[]> {
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+  if (!appId || !appKey) return [];
+  if (!ADZUNA_COUNTRIES.includes(country)) return [];
+
+  const url = new URL(`${BASE_URL}/${country.toLowerCase()}/search/1`);
+  url.searchParams.set("app_id", appId);
+  url.searchParams.set("app_key", appKey);
+  url.searchParams.set("results_per_page", String(RESULTS_PER_CALL));
+  url.searchParams.set("max_days_old", "2");
+  url.searchParams.set("sort_by", "date");
+
+  let data: AdzunaSearchResult;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    if (res.status === 429) return []; // quota hit — skip quietly, retry next run
+    if (!res.ok) return [];
+    data = (await res.json()) as AdzunaSearchResult;
+  } catch {
+    return [];
+  }
+
+  const jobs = data.results ?? [];
+
+  return jobs
+    .map((job): NewOffer | null => {
+      const candidates = [
+        ...(job.location?.area ? [...job.location.area].reverse() : []),
+        job.location?.display_name ?? "",
+      ];
+      const city = matchCityFromCandidates(candidates, country);
+      if (!city) return null;
+
+      const specialty = matchSpecialty(job.title);
+      if (!specialty) return null;
+
+      const currency = CURRENCY_BY_COUNTRY[country] ?? "EUR";
+      const salaryRaw =
+        job.salary_min || job.salary_max
+          ? `${job.salary_min && job.salary_max ? `${Math.round(job.salary_min)}-${Math.round(job.salary_max)}` : Math.round(job.salary_min || job.salary_max || 0)} ${currency}`
+          : null;
+
+      return {
+        id: `adzuna:${job.id}`,
+        titleOriginal: job.title,
+        titleEn: job.title,
+        titleFr: job.title,
+        titleEs: job.title,
+        company: job.company?.display_name || "—",
+        countryCode: country,
+        city,
+        specialty,
+        contractType: job.contract_type ?? job.contract_time ?? null,
+        salaryRaw,
+        remote: /remote|t[ée]l[ée]travail|teletrabajo|home ?office/i.test(job.title),
+        languageOfAd: LANGUAGE_BY_COUNTRY[country] ?? "en",
+        url: job.redirect_url,
+        source: "adzuna",
+        publishedAt: new Date(job.created),
+      };
+    })
+    .filter((offer): offer is NewOffer => offer !== null);
+}
