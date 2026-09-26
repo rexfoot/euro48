@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getOfferById } from "@/lib/offers";
 import { OfferCard } from "@/components/OfferCard";
 import { BackLink } from "@/components/Localized";
-import { titleFor } from "@/lib/offer-display";
+import { titleFor, cityLabel } from "@/lib/offer-display";
 import { pageAlternates, countryNameFr, jobPostingJsonLd } from "@/lib/seo";
 import type { CountryCode } from "@/lib/constants";
 
@@ -16,9 +16,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = titleFor(offer, "fr");
   const country = countryNameFr(offer.country_code as CountryCode);
+  const city = cityLabel(offer.city, "fr");
   return {
-    title: `${title} — ${offer.city}, ${country}`,
-    description: `${title} chez ${offer.company} à ${offer.city}, ${country}. Offre publiée il y a moins de 48h sur Euro48.`,
+    title: `${title} — ${city}, ${country}`,
+    description: `${title} chez ${offer.company} à ${city}, ${country}. Offre publiée il y a moins de 48h sur Euro48.`,
     alternates: pageAlternates(`/job/${encodeURIComponent(offer.id)}`),
   };
 }

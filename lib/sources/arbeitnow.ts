@@ -1,5 +1,5 @@
 import { LANGUAGE_BY_COUNTRY } from "../constants";
-import { matchAnyCity, matchSpecialty } from "../classify";
+import { canonicalizeCityWithCountry, matchSpecialty } from "../classify";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -37,8 +37,8 @@ async function fetchPage(page: number): Promise<ArbeitnowJob[]> {
 
 function build(job: ArbeitnowJob): NewOffer | null {
   const parts = job.location.split(",").map((p) => p.trim()).filter(Boolean);
-  const match = matchAnyCity(parts);
-  if (!match) return null;
+  const match = canonicalizeCityWithCountry(parts);
+  if (!match) return null; // no known city and no country mentioned — can't place it in any of our 15
   const { city, country } = match;
 
   const specialty = matchSpecialty(job.title);

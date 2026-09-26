@@ -1,10 +1,12 @@
 import type { Offer } from "./offers";
-import { CITIES, COUNTRY_CODES, type CountryCode } from "./constants";
+import { COUNTRY_CODES, type CountryCode } from "./constants";
 
+// Cities are open: this simply counts whatever city each currently visible
+// offer has — a city with zero offers just never appears here, which is
+// exactly what should happen (never list an empty city).
 export function countsByCity(offers: Offer[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const offer of offers) {
-    if (!(offer.city in CITIES)) continue;
     counts[offer.city] = (counts[offer.city] ?? 0) + 1;
   }
   return counts;

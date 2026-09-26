@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { COUNTRY_CODES, citiesForCountry, type CountryCode } from "@/lib/constants";
+import { COUNTRY_CODES, type CountryCode } from "@/lib/constants";
 import { getVisibleOffers } from "@/lib/offers";
 import { countsByCity } from "@/lib/aggregate";
 import { CityGrid } from "@/components/CityGrid";
@@ -31,7 +31,6 @@ export default async function CountryPage({ params }: Props) {
 
   const offers = await getVisibleOffers({ country: code, limit: 500 });
   const cityCounts = countsByCity(offers);
-  const cities = citiesForCountry(code);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
@@ -42,7 +41,7 @@ export default async function CountryPage({ params }: Props) {
       <p className="mb-6 text-sm text-accent-amber">+{offers.length}</p>
       <SectionLabel labelKey="choose_city" />
       <div className="mt-3">
-        <CityGrid country={code} cities={cities} counts={cityCounts} />
+        <CityGrid country={code} counts={cityCounts} />
       </div>
     </main>
   );

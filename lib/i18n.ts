@@ -28,6 +28,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     about_link: "À propos",
     privacy_link: "Confidentialité",
     terms_link: "Conditions",
+    other_locations: "Autres localisations",
+    all_cities: "Toutes les villes",
+    search_city: "Chercher une ville…",
   },
   es: {
     counter_prefix: "+",
@@ -50,6 +53,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     about_link: "Acerca de",
     privacy_link: "Privacidad",
     terms_link: "Términos",
+    other_locations: "Otras ubicaciones",
+    all_cities: "Todas las ciudades",
+    search_city: "Buscar una ciudad…",
   },
   en: {
     counter_prefix: "+",
@@ -72,6 +78,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     about_link: "About",
     privacy_link: "Privacy",
     terms_link: "Terms",
+    other_locations: "Other locations",
+    all_cities: "All cities",
+    search_city: "Search a city…",
   },
 };
 

@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
-import { CITIES, COUNTRY_CODES, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
+import { COUNTRY_CODES, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
 
 export type Offer = {
   id: string;
@@ -97,6 +97,18 @@ export const getOfferById = cache(async (id: string): Promise<Offer | null> => {
   return rows[0] ?? null;
 });
 
+// Every currently-active (country, city, specialty) combination — cities
+// are open now, so the sitemap can't enumerate a fixed list; it needs to
+// ask the DB which ones actually have offers right now.
+export async function getActiveLocationBreakdown(): Promise<
+  { country_code: CountryCode; city: string; specialty: SpecialtyId }[]
+> {
+  return query(
+    `SELECT DISTINCT country_code, city, specialty FROM offers
+     WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
+  );
+}
+
 export async function countVisibleOffers(): Promise<number> {
   const rows = await query<{ count: string }>(
     `SELECT count(*) FROM offers WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
@@ -134,10 +146,9 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       skipped++;
       continue;
     }
-    if (!(offer.city in CITIES) || CITIES[offer.city as keyof typeof CITIES].country !== offer.countryCode) {
-      skipped++;
-      continue;
-    }
+    // City is open (2026-09-26): any real place name from a source is
+    // accepted (see canonicalizeCity) — only country and specialty stay
+    // closed lists.
     if (!SPECIALTY_IDS.includes(offer.specialty)) {
       skipped++;
       continue;

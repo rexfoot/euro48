@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL, COUNTRY_CODES, citiesForCountry, SPECIALTY_IDS, MAX_VISIBLE_OFFERS } from "@/lib/constants";
-import { getVisibleOffers } from "@/lib/offers";
+import { SITE_URL, COUNTRY_CODES, MAX_VISIBLE_OFFERS } from "@/lib/constants";
+import { getVisibleOffers, getActiveLocationBreakdown } from "@/lib/offers";
 import { sitemapAlternates } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -23,9 +23,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
       alternates: sitemapAlternates(countryPath),
     });
+  }
 
-    for (const city of citiesForCountry(country)) {
-      const cityPath = `${countryPath}/${encodeURIComponent(city)}`;
+  // Cities are open (no fixed list) — only list the (country, city) and
+  // (country, city, specialty) combinations that actually have offers
+  // right now, instead of enumerating a static list that no longer exists.
+  const breakdown = await getActiveLocationBreakdown();
+  const seenCityPaths = new Set<string>();
+
+  for (const row of breakdown) {
+    const countryPath = `/${row.country_code.toLowerCase()}`;
+    const cityPath = `${countryPath}/${encodeURIComponent(row.city)}`;
+
+    if (!seenCityPaths.has(cityPath)) {
+      seenCityPaths.add(cityPath);
       entries.push({
         url: `${SITE_URL}${cityPath}`,
         lastModified: now,
@@ -33,18 +44,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
         alternates: sitemapAlternates(cityPath),
       });
-
-      for (const specialty of SPECIALTY_IDS) {
-        const specialtyPath = `${cityPath}/${specialty}`;
-        entries.push({
-          url: `${SITE_URL}${specialtyPath}`,
-          lastModified: now,
-          changeFrequency: "hourly",
-          priority: 0.5,
-          alternates: sitemapAlternates(specialtyPath),
-        });
-      }
     }
+
+    const specialtyPath = `${cityPath}/${row.specialty}`;
+    entries.push({
+      url: `${SITE_URL}${specialtyPath}`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.5,
+      alternates: sitemapAlternates(specialtyPath),
+    });
   }
 
   const offers = await getVisibleOffers({ limit: MAX_VISIBLE_OFFERS });

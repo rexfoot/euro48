@@ -1,5 +1,5 @@
-import type { CountryCode } from "../constants";
-import { matchCity, matchSpecialty } from "../classify";
+import { OTHER_CITY, type CountryCode } from "../constants";
+import { canonicalizeCity, matchSpecialty } from "../classify";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -115,10 +115,7 @@ export async function fetchEuresOffersForCountry(
     if (!profile) return null;
 
     const location = profile.locations?.find((l) => l.cityName);
-    if (!location?.cityName) return null;
-
-    const city = matchCity(location.cityName, country);
-    if (!city) return null;
+    const city = (location?.cityName && canonicalizeCity([location.cityName])) || OTHER_CITY;
 
     const specialty = matchSpecialty(profile.title);
     if (!specialty) return null;

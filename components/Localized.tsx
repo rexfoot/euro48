@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 import { COUNTRIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "@/lib/constants";
+import { cityLabel } from "@/lib/offer-display";
 
 export function CountryName({ code }: { code: CountryCode }) {
   const { locale } = useLocale();
   const country = COUNTRIES.find((c) => c.code === code);
   return <>{country?.name[locale] ?? code}</>;
+}
+
+export function CityDisplayName({ city }: { city: string }) {
+  const { locale } = useLocale();
+  return <>{cityLabel(city, locale)}</>;
 }
 
 export function SpecialtyName({ id }: { id: SpecialtyId }) {

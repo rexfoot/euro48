@@ -1,5 +1,5 @@
-import { citiesForCountry, type CityName } from "../constants";
-import { matchCity, matchSpecialty } from "../classify";
+import { citiesForCountry, OTHER_CITY, type CityName } from "../constants";
+import { canonicalizeCity, matchSpecialty } from "../classify";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -60,9 +60,7 @@ async function fetchForCity(city: CityName): Promise<NewOffer[]> {
   return jobs
     .map((job): NewOffer | null => {
       const ort = job.stellenlokationen?.[0]?.adresse?.ort;
-      if (!ort) return null;
-      const matchedCity = matchCity(ort, "DE");
-      if (!matchedCity) return null;
+      const matchedCity = (ort && canonicalizeCity([ort])) || OTHER_CITY;
 
       const specialty = matchSpecialty(`${job.stellenangebotsTitel} ${job.hauptberuf ?? ""}`);
       if (!specialty) return null;

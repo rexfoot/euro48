@@ -3,7 +3,7 @@
 import type { Offer } from "@/lib/offers";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
-import { titleFor, ageBadge, isUrgentOffer, minutesOrHoursAgo } from "@/lib/offer-display";
+import { titleFor, ageBadge, isUrgentOffer, minutesOrHoursAgo, cityLabel } from "@/lib/offer-display";
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const { locale } = useLocale();
@@ -33,7 +33,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
       </div>
       <h3 className="font-medium leading-snug">{titleFor(offer, locale)}</h3>
       <p className="text-sm text-muted">
-        {offer.company} · {offer.city} · {offer.country_code}
+        {offer.company} · {cityLabel(offer.city, locale)} · {offer.country_code}
       </p>
       <a
         href={offer.url}

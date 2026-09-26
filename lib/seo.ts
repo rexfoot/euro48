@@ -1,4 +1,4 @@
-import { SITE_URL, COUNTRIES, SPECIALTIES, type CityName, type CountryCode, type SpecialtyId } from "./constants";
+import { SITE_URL, COUNTRIES, OTHER_CITY, SPECIALTIES, type CountryCode, type SpecialtyId } from "./constants";
 import type { Offer } from "./offers";
 import { titleFor } from "./offer-display";
 
@@ -38,13 +38,17 @@ const SOURCE_LABELS: Record<string, string> = {
   adzuna: "Adzuna",
   arbeitnow: "Arbeitnow",
   bundesagentur: "Bundesagentur für Arbeit",
+  jobtech: "Arbetsförmedlingen",
+  nav: "NAV",
 };
 
 // JobPosting (schema.org) structured data for one offer. Returns null when
 // we don't have the minimum real fields Google requires — we never
-// fabricate a company name or description to force a rich result.
+// fabricate a company name, and a real jobLocation is one of them, so an
+// offer filed under "Other" (no location text at all) skips this too.
 export function jobPostingJsonLd(offer: Offer) {
   if (!offer.company || offer.company === "—") return null;
+  if (offer.city === OTHER_CITY) return null;
 
   const url = `${SITE_URL}/job/${encodeURIComponent(offer.id)}`;
   const title = titleFor(offer, "fr");
@@ -66,7 +70,7 @@ export function jobPostingJsonLd(offer: Offer) {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality: offer.city as CityName,
+        addressLocality: offer.city,
         addressCountry: offer.country_code,
       },
     },

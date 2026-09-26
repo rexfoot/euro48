@@ -4,6 +4,8 @@ import { fetchEuresOffersForCountry, EURES_MAX_PAGE } from "@/lib/sources/eures"
 import { ADZUNA_COUNTRIES, ADZUNA_MAX_PAGE, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
 import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
+import { fetchJobTechOffers } from "@/lib/sources/jobtech";
+import { fetchNavOffers } from "@/lib/sources/nav";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -126,11 +128,25 @@ async function runBundesagentur() {
   return { bundesagentur: result };
 }
 
+async function runJobTech() {
+  const offers = await fetchJobTechOffers();
+  const result = await upsertOffers(offers);
+  return { jobtech: result };
+}
+
+async function runNav() {
+  const offers = await fetchNavOffers();
+  const result = await upsertOffers(offers);
+  return { nav: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, CountResult>>> = {
   eures: runEures,
   adzuna: runAdzuna,
   arbeitnow: runArbeitnow,
   bundesagentur: runBundesagentur,
+  jobtech: runJobTech,
+  nav: runNav,
 };
 
 export async function POST(req: NextRequest) {

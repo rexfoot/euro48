@@ -191,3 +191,7 @@ export const OFFER_DELETE_HOURS = 72;
 export const MAX_VISIBLE_OFFERS = 2000;
 
 export const SITE_URL = "https://euro48.com";
+
+// Bucket for offers whose source gave us no usable location text at all
+// (spec: never drop an offer just for missing a city — see canonicalizeCity).
+export const OTHER_CITY = "Other";

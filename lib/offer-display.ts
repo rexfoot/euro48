@@ -1,11 +1,18 @@
 import type { Offer } from "./offers";
 import type { Locale } from "./constants";
-import { URGENT_KEYWORDS } from "./constants";
+import { OTHER_CITY, URGENT_KEYWORDS } from "./constants";
+import { t } from "./i18n";
 
 export function titleFor(offer: Offer, locale: Locale): string {
   if (locale === "fr") return offer.title_fr || offer.title_original;
   if (locale === "es") return offer.title_es || offer.title_original;
   return offer.title_en || offer.title_original;
+}
+
+// City is stored the same way regardless of locale (e.g. "Oskarshamn") —
+// only the "no city given" bucket needs translating for display.
+export function cityLabel(city: string, locale: Locale): string {
+  return city === OTHER_CITY ? t(locale, "other_locations") : city;
 }
 
 export function hoursSince(publishedAt: string): number {
