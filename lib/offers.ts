@@ -208,7 +208,11 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            id, title_original, title_en, title_fr, title_es, company,
            country_code, city, specialty, contract_type, salary_raw, remote,
            language_of_ad, url, source, published_at, fingerprint, city_lat, city_lng
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+         ) VALUES (
+           $1::text, $2::text, $3::text, $4::text, $5::text, $6::text,
+           $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean,
+           $13::text, $14::text, $15::text, $16::timestamptz, $17::text, $18::double precision, $19::double precision
+         )
          ON CONFLICT (fingerprint) DO UPDATE SET
            title_original = EXCLUDED.title_original,
            title_en = EXCLUDED.title_en,
@@ -231,10 +235,17 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
     } catch (err) {
       // Same id, different fingerprint: happens when the same posting is
       // re-observed under a different matched city (e.g. two cities'
-      // radius searches overlapping) in a later run than the one that
-      // first stored it. The fingerprint conflict target above can't also
-      // catch a primary-key collision, so handle it explicitly instead of
-      // letting the whole batch crash.
+      // radius searches overlapping, or a city-matching improvement
+      // resolving it differently than a previous run did) in a later run
+      // than the one that first stored it. The fingerprint conflict
+      // target above can't also catch a primary-key collision, so handle
+      // it explicitly instead of letting the whole batch crash.
+      //
+      // This UPDATE must reference every placeholder with an explicit
+      // cast: any $n that appears nowhere in the query text (previously
+      // $6/$7/$13 were skipped) leaves Postgres with zero type context for
+      // it and it fails the whole query with "could not determine data
+      // type of parameter $n" (42P18) — not just skip that column.
       const isPkConflict =
         (err as { code?: string; constraint?: string }).code === "23505" &&
         (err as { code?: string; constraint?: string }).constraint === "offers_pkey";
@@ -242,11 +253,25 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
 
       await query(
         `UPDATE offers SET
-           title_original = $2, title_en = $3, title_fr = $4, title_es = $5,
-           city = $8, specialty = $9, contract_type = $10, salary_raw = $11, remote = $12,
-           url = $14, source = $15, published_at = $16, fingerprint = $17,
-           city_lat = $18, city_lng = $19
-         WHERE id = $1 AND $16::timestamptz > published_at`,
+           title_original = $2::text,
+           title_en = $3::text,
+           title_fr = $4::text,
+           title_es = $5::text,
+           company = $6::text,
+           country_code = $7::text,
+           city = $8::text,
+           specialty = $9::text,
+           contract_type = $10::text,
+           salary_raw = $11::text,
+           remote = $12::boolean,
+           language_of_ad = $13::text,
+           url = $14::text,
+           source = $15::text,
+           published_at = $16::timestamptz,
+           fingerprint = $17::text,
+           city_lat = $18::double precision,
+           city_lng = $19::double precision
+         WHERE id = $1::text AND $16::timestamptz > published_at`,
         values
       );
       skipped++;
