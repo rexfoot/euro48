@@ -4,18 +4,30 @@
 import { CITIES, SPECIALTIES, type CityName, type CountryCode, type SpecialtyId } from "./constants";
 import { normalizeForFingerprint } from "./fingerprint";
 
+// A handful of native-language city names that differ enough from our
+// (English) CITIES keys that accent-stripping alone won't match them.
+// Kept intentionally small — only names we've actually seen from a source.
+const CITY_ALIASES: Partial<Record<string, CityName>> = {
+  munchen: "Munich",
+  koln: "Cologne",
+};
+
+function resolveCityName(normalizedCandidate: string): CityName | null {
+  for (const cityName of Object.keys(CITIES) as CityName[]) {
+    if (normalizeForFingerprint(cityName) === normalizedCandidate) return cityName;
+  }
+  return CITY_ALIASES[normalizedCandidate] ?? null;
+}
+
 // Tries each candidate raw place name (most specific first) against the
 // closed city list for the given country. Returns the first match.
 export function matchCityFromCandidates(candidates: string[], country: CountryCode): string | null {
   for (const raw of candidates) {
     const candidate = raw.split(/[,/(]/)[0].trim();
     if (!candidate) continue;
-    const normalizedCandidate = normalizeForFingerprint(candidate);
 
-    for (const cityName of Object.keys(CITIES) as (keyof typeof CITIES)[]) {
-      if (CITIES[cityName].country !== country) continue;
-      if (normalizeForFingerprint(cityName) === normalizedCandidate) return cityName;
-    }
+    const cityName = resolveCityName(normalizeForFingerprint(candidate));
+    if (cityName && CITIES[cityName].country === country) return cityName;
   }
   return null;
 }
@@ -31,13 +43,9 @@ export function matchAnyCity(parts: string[]): { city: CityName; country: Countr
   for (const raw of parts) {
     const candidate = raw.trim();
     if (!candidate) continue;
-    const normalizedCandidate = normalizeForFingerprint(candidate);
 
-    for (const cityName of Object.keys(CITIES) as CityName[]) {
-      if (normalizeForFingerprint(cityName) === normalizedCandidate) {
-        return { city: cityName, country: CITIES[cityName].country };
-      }
-    }
+    const cityName = resolveCityName(normalizeForFingerprint(candidate));
+    if (cityName) return { city: cityName, country: CITIES[cityName].country };
   }
   return null;
 }

@@ -3,6 +3,7 @@ import { COUNTRY_CODES } from "@/lib/constants";
 import { fetchEuresOffersForCountry } from "@/lib/sources/eures";
 import { ADZUNA_COUNTRIES, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
+import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -77,10 +78,17 @@ async function runArbeitnow() {
   return { arbeitnow: result };
 }
 
+async function runBundesagentur() {
+  const offers = await fetchBundesagenturOffers();
+  const result = await upsertOffers(offers);
+  return { bundesagentur: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, { inserted: number; skipped: number }>>> = {
   eures: runEures,
   adzuna: runAdzuna,
   arbeitnow: runArbeitnow,
+  bundesagentur: runBundesagentur,
 };
 
 export async function POST(req: NextRequest) {
