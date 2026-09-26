@@ -124,42 +124,42 @@ export const SPECIALTIES = [
   {
     id: "hospitality",
     name: { fr: "Hôtellerie / tourisme", es: "Hostelería / turismo", en: "Hospitality / tourism" },
-    keywords: ["hotel", "restaurant", "tourism", "hospitality", "hôtellerie", "hosteleria", "turismo", "waiter", "chef", "cocinero", "serveur", "hotell", "restaurang", "ravintola"],
+    keywords: ["hotel", "restaurant", "tourism", "hospitality", "hôtellerie", "hosteleria", "turismo", "waiter", "chef", "cocinero", "serveur", "hotell", "restaurang", "ravintola", "horeca", "kok", "kelner", "serveerster", "veitingahús", "þjónn"],
   },
   {
     id: "logistics",
     name: { fr: "Logistique / entrepôt", es: "Logística / almacén", en: "Logistics / warehouse" },
-    keywords: ["logistics", "warehouse", "entrepôt", "almacen", "almacén", "logistique", "fulfillment", "picker", "magazijn", "lager", "logistik", "varasto"],
+    keywords: ["logistics", "warehouse", "entrepôt", "almacen", "almacén", "logistique", "fulfillment", "picker", "magazijn", "lager", "logistik", "varasto", "logistiek", "orderpicker", "heftruck", "vöruhús"],
   },
   {
     id: "healthcare",
     name: { fr: "Santé / soins", es: "Salud / cuidados", en: "Healthcare / care" },
-    keywords: ["nurse", "health", "care", "santé", "soins", "salud", "enfermero", "infirmier", "pflege", "zorg", "caregiver", "sjuksköterska", "läkare", "sykepleier", "lege", "sygeplejerske", "læge", "sairaanhoitaja", "lääkäri", "terveys", "helse"],
+    keywords: ["nurse", "health", "care", "santé", "soins", "salud", "enfermero", "infirmier", "pflege", "zorg", "caregiver", "sjuksköterska", "läkare", "sykepleier", "lege", "sygeplejerske", "læge", "sairaanhoitaja", "lääkäri", "terveys", "helse", "verzorgende", "verpleegkundige", "arts", "thuiszorg", "hjúkrunarfræðingur", "læknir", "umönnun"],
   },
   {
     id: "construction",
     name: { fr: "Construction", es: "Construcción", en: "Construction" },
-    keywords: ["construction", "construccion", "bau", "bouw", "builder", "electrician", "plumber", "mason", "albañil", "maçon", "bygg", "byggnad", "rakennus"],
+    keywords: ["construction", "construccion", "bau", "bouw", "builder", "electrician", "plumber", "mason", "albañil", "maçon", "bygg", "byggnad", "rakennus", "bouwvakker", "elektricien", "loodgieter", "installateur", "rafvirki", "pípulagningamaður", "byggingariðnaður"],
   },
   {
     id: "retail",
     name: { fr: "Commerce / retail", es: "Comercio / retail", en: "Retail / commerce" },
-    keywords: ["retail", "commerce", "comercio", "shop", "store", "vendeur", "vendedor", "cashier", "verkauf", "winkel", "butik", "butikk", "försäljning", "salg", "myyjä", "kauppa"],
+    keywords: ["retail", "commerce", "comercio", "shop", "store", "vendeur", "vendedor", "cashier", "verkauf", "winkel", "butik", "butikk", "försäljning", "salg", "myyjä", "kauppa", "verkoper", "detailhandel", "winkelbediende", "verslun", "afgreiðslumaður"],
   },
   {
     id: "industry",
     name: { fr: "Industrie / maintenance", es: "Industria / mantenimiento", en: "Industry / maintenance" },
-    keywords: ["industry", "industria", "maintenance", "mantenimiento", "manufacturing", "technicien", "tecnico", "industrie", "produktion", "underhåll", "vedlikehold", "vedligeholdelse", "teollisuus"],
+    keywords: ["industry", "industria", "maintenance", "mantenimiento", "manufacturing", "technicien", "tecnico", "industrie", "produktion", "underhåll", "vedlikehold", "vedligeholdelse", "teollisuus", "onderhoud", "monteur", "productiemedewerker", "viðhald", "iðnaður"],
   },
   {
     id: "transport",
     name: { fr: "Transport / conducteurs", es: "Transporte / conductores", en: "Transport / drivers" },
-    keywords: ["driver", "conducteur", "conductor", "transport", "chauffeur", "trucker", "delivery", "fahrer", "chofer", "förare", "sjåfør", "chauffør", "kuljettaja"],
+    keywords: ["driver", "conducteur", "conductor", "transport", "chauffeur", "trucker", "delivery", "fahrer", "chofer", "förare", "sjåfør", "chauffør", "kuljettaja", "bezorger", "vrachtwagenchauffeur", "bílstjóri"],
   },
   {
     id: "it",
     name: { fr: "IT / support", es: "IT / soporte", en: "IT / support" },
-    keywords: ["it support", "developer", "software", "informatique", "informatica", "helpdesk", "sysadmin", "devops", "programmer"],
+    keywords: ["it support", "developer", "software", "informatique", "informatica", "helpdesk", "sysadmin", "devops", "programmer", "ontwikkelaar", "hugbúnaður"],
   },
 ] as const;
 
