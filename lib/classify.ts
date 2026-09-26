@@ -153,7 +153,9 @@ export function resolveCityWithCountry(
 // collisions with ordinary English/French/Spanish words.
 const SUFFIX_MIN_LENGTH = 6;
 
-export function matchSpecialty(title: string): SpecialtyId | null {
+// Never drops a real offer for not matching one of the 8 named trades —
+// falls back to the "other" catch-all specialty instead (spec 2026-09-26).
+export function matchSpecialty(title: string): SpecialtyId {
   const normalized = title.toLowerCase();
   const tokens = new Set(normalized.match(/\p{L}+/gu) ?? []);
 
@@ -168,5 +170,5 @@ export function matchSpecialty(title: string): SpecialtyId | null {
     });
     if (hit) return specialty.id;
   }
-  return null;
+  return "other";
 }

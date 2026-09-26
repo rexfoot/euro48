@@ -119,7 +119,8 @@ export function citiesForCountry(code: CountryCode): CityName[] {
   );
 }
 
-// Exactly 8 specialties. No other taxonomy (spec section 4 / 12).
+// 8 named trades + a 9th "other" catch-all (2026-09-26: no real offer is
+// ever dropped just for not matching one of the 8 — see lib/classify.ts).
 export const SPECIALTIES = [
   {
     id: "hospitality",
@@ -160,6 +161,11 @@ export const SPECIALTIES = [
     id: "it",
     name: { fr: "IT / support", es: "IT / soporte", en: "IT / support" },
     keywords: ["it support", "developer", "software", "informatique", "informatica", "helpdesk", "sysadmin", "devops", "programmer", "ontwikkelaar", "hugbúnaður"],
+  },
+  {
+    id: "other",
+    name: { fr: "Autres emplois", es: "Otros empleos", en: "Other jobs" },
+    keywords: [],
   },
 ] as const;
 

@@ -72,7 +72,6 @@ export async function fetchNavOffers(): Promise<NewOffer[]> {
       if (!entry || entry.status !== "ACTIVE") return null;
 
       const specialty = matchSpecialty(entry.title);
-      if (!specialty) return null;
 
       const { city, lat, lng } = resolveCity(cityIndex, entry.municipal ? [entry.municipal] : [], "NO");
 

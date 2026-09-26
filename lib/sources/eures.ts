@@ -120,7 +120,6 @@ export async function fetchEuresOffersForCountry(
     const { city, lat, lng } = resolveCity(cityIndex, location?.cityName ? [location.cityName] : [], country);
 
     const specialty = matchSpecialty(profile.title);
-    if (!specialty) return null;
 
     return {
       id: `eures:${jv.id}`,

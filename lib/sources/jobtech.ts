@@ -47,7 +47,6 @@ export async function fetchJobTechOffers(): Promise<NewOffer[]> {
   return hits
     .map((hit): NewOffer | null => {
       const specialty = matchSpecialty(`${hit.headline} ${hit.occupation?.label ?? ""}`);
-      if (!specialty) return null;
 
       const cityRaw = hit.workplace_address?.city ?? hit.workplace_address?.municipality ?? "";
       const { city, lat, lng } = resolveCity(cityIndex, cityRaw ? [cityRaw] : [], "SE");

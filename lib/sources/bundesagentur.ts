@@ -64,7 +64,6 @@ async function fetchForCity(city: CityName, cityIndex: CityIndex): Promise<NewOf
       const { city: matchedCity, lat, lng } = resolveCity(cityIndex, ort ? [ort] : [], "DE");
 
       const specialty = matchSpecialty(`${job.stellenangebotsTitel} ${job.hauptberuf ?? ""}`);
-      if (!specialty) return null;
 
       const publishedAt = job.datumErsteVeroeffentlichung
         ? new Date(job.datumErsteVeroeffentlichung)

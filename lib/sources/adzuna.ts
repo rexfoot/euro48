@@ -52,10 +52,18 @@ export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1
   let data: AdzunaSearchResult;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-    if (res.status === 429) return []; // quota hit — skip quietly, retry next run
-    if (!res.ok) return [];
+    if (res.status === 429) {
+      console.error(`[adzuna] ${country} p${page}: 429 quota hit, skipping this run`);
+      return [];
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[adzuna] ${country} p${page}: HTTP ${res.status} — ${body.slice(0, 300)}`);
+      return [];
+    }
     data = (await res.json()) as AdzunaSearchResult;
-  } catch {
+  } catch (err) {
+    console.error(`[adzuna] ${country} p${page}: fetch threw — ${(err as Error).message}`);
     return [];
   }
 
@@ -71,7 +79,6 @@ export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1
       const { city, lat, lng } = resolveCity(cityIndex, candidates, country);
 
       const specialty = matchSpecialty(job.title);
-      if (!specialty) return null;
 
       const currency = CURRENCY_BY_COUNTRY[country] ?? "EUR";
       const salaryRaw =

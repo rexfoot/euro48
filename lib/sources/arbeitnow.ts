@@ -43,7 +43,6 @@ function build(job: ArbeitnowJob, cityIndex: CityIndex): NewOffer | null {
   const { city, country, lat, lng } = match;
 
   const specialty = matchSpecialty(job.title);
-  if (!specialty) return null;
 
   return {
     id: `arbeitnow:${job.slug}`,
