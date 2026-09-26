@@ -68,10 +68,26 @@ export async function getVisibleOffers(filters: {
   const limit = Math.min(filters.limit ?? 200, 2000);
   params.push(limit);
 
-  return query<Offer>(
+  const rows = await query<Offer>(
     `SELECT * FROM offers WHERE ${conditions.join(" AND ")} ORDER BY published_at DESC LIMIT $${params.length}`,
     params
   );
+
+  // Defense in depth: the fingerprint UNIQUE constraint should already make
+  // this a no-op, but never show the same job twice even if that's ever
+  // bypassed (e.g. a fingerprint algorithm change mid-flight).
+  return dedupeByFingerprint(rows);
+}
+
+function dedupeByFingerprint(offers: Offer[]): Offer[] {
+  const seen = new Set<string>();
+  const result: Offer[] = [];
+  for (const offer of offers) {
+    if (seen.has(offer.fingerprint)) continue;
+    seen.add(offer.fingerprint);
+    result.push(offer);
+  }
+  return result;
 }
 
 // Wrapped in React's cache() so generateMetadata and the page body — both
