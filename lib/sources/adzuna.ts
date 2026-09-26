@@ -1,4 +1,4 @@
-import type { CountryCode } from "../constants";
+import { LANGUAGE_BY_COUNTRY, type CountryCode } from "../constants";
 import { matchCityFromCandidates, matchSpecialty } from "../classify";
 import type { NewOffer } from "../offers";
 
@@ -12,10 +12,6 @@ export const ADZUNA_COUNTRIES: CountryCode[] = ["DE", "NL", "CH", "BE", "AT", "F
 
 const CURRENCY_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
   CH: "CHF",
-};
-
-const LANGUAGE_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
-  DE: "de", NL: "nl", CH: "de", BE: "fr", AT: "de", FR: "fr", ES: "es", IT: "it",
 };
 
 type AdzunaJob = {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { COUNTRY_CODES } from "@/lib/constants";
 import { fetchEuresOffersForCountry } from "@/lib/sources/eures";
 import { ADZUNA_COUNTRIES, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
+import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -70,9 +71,16 @@ async function runAdzuna(country?: string) {
   return { [target]: result };
 }
 
+async function runArbeitnow() {
+  const offers = await fetchArbeitnowOffers();
+  const result = await upsertOffers(offers);
+  return { arbeitnow: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, { inserted: number; skipped: number }>>> = {
   eures: runEures,
   adzuna: runAdzuna,
+  arbeitnow: runArbeitnow,
 };
 
 export async function POST(req: NextRequest) {

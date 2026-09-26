@@ -168,6 +168,12 @@ export const URGENT_KEYWORDS = [
   "urgente", "immediato", "urgent", "dringend", "spoedig",
 ];
 
+// Best-guess language of the original ad by country — used by sources whose
+// API doesn't report the ad's language directly (Adzuna, Arbeitnow).
+export const LANGUAGE_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
+  DE: "de", NL: "nl", CH: "de", BE: "fr", AT: "de", FR: "fr", ES: "es", IT: "it",
+};
+
 export const LOCALES = ["fr", "es", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 

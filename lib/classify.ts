@@ -1,7 +1,7 @@
 // Shared city/specialty matching, reused by every source module so all of
 // them enforce the same closed lists (spec section 12 "INTERDIT").
 
-import { CITIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "./constants";
+import { CITIES, SPECIALTIES, type CityName, type CountryCode, type SpecialtyId } from "./constants";
 import { normalizeForFingerprint } from "./fingerprint";
 
 // Tries each candidate raw place name (most specific first) against the
@@ -22,6 +22,24 @@ export function matchCityFromCandidates(candidates: string[], country: CountryCo
 
 export function matchCity(rawCityName: string, country: CountryCode): string | null {
   return matchCityFromCandidates([rawCityName], country);
+}
+
+// For sources that don't tell us the country (e.g. Arbeitnow): tries each
+// already-split location part against the closed city list across all 15
+// countries. Safe by construction — only ever returns a listed city/country.
+export function matchAnyCity(parts: string[]): { city: CityName; country: CountryCode } | null {
+  for (const raw of parts) {
+    const candidate = raw.trim();
+    if (!candidate) continue;
+    const normalizedCandidate = normalizeForFingerprint(candidate);
+
+    for (const cityName of Object.keys(CITIES) as CityName[]) {
+      if (normalizeForFingerprint(cityName) === normalizedCandidate) {
+        return { city: cityName, country: CITIES[cityName].country };
+      }
+    }
+  }
+  return null;
 }
 
 export function matchSpecialty(title: string): SpecialtyId | null {
