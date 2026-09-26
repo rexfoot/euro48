@@ -143,14 +143,29 @@ export function resolveCityWithCountry(
   return { city: fallbackCityName(cityPieces) ?? OTHER_CITY, country, lat: null, lng: null };
 }
 
+// Compound-final languages (Finnish, Swedish, Norwegian, Dutch, German, ...)
+// fuse the occupation noun onto the end of a modifier with no separator —
+// "Sähköasentaja" (electrician), "Taksinkuljettaja" (taxi driver) — so an
+// exact-token check alone (tokens.has(kw)) never fires for them. A keyword
+// long enough (>=6 letters) is vanishingly unlikely to end an unrelated
+// word by coincidence, so it doubles as a safe suffix check; shorter
+// keywords ("bau", "arts", "kok"...) stay exact-token-only to avoid
+// collisions with ordinary English/French/Spanish words.
+const SUFFIX_MIN_LENGTH = 6;
+
 export function matchSpecialty(title: string): SpecialtyId | null {
   const normalized = title.toLowerCase();
   const tokens = new Set(normalized.match(/\p{L}+/gu) ?? []);
 
   for (const specialty of SPECIALTIES) {
-    const hit = specialty.keywords.some((kw) =>
-      kw.includes(" ") ? normalized.includes(kw) : tokens.has(kw)
-    );
+    const hit = specialty.keywords.some((kw) => {
+      if (kw.includes(" ")) return normalized.includes(kw);
+      if (tokens.has(kw)) return true;
+      if (kw.length >= SUFFIX_MIN_LENGTH) {
+        for (const token of tokens) if (token.endsWith(kw)) return true;
+      }
+      return false;
+    });
     if (hit) return specialty.id;
   }
   return null;
