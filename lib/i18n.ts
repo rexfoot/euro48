@@ -34,6 +34,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     no_offers_city: "Pas de nouvelles offres ici pour le moment.",
     nearby_cities: "Villes les plus proches avec des offres :",
     km_away: "à {n} km",
+    search_country: "Chercher un pays…",
+    no_country_found: "Aucun pays trouvé.",
   },
   es: {
     counter_prefix: "+",
@@ -62,6 +64,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     no_offers_city: "No hay ofertas nuevas aquí ahora mismo.",
     nearby_cities: "Ciudades más cercanas con ofertas:",
     km_away: "a {n} km",
+    search_country: "Buscar un país…",
+    no_country_found: "Ningún país encontrado.",
   },
   en: {
     counter_prefix: "+",
@@ -90,6 +94,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     no_offers_city: "No new offers here right now.",
     nearby_cities: "Nearest cities with offers:",
     km_away: "{n} km away",
+    search_country: "Search a country…",
+    no_country_found: "No country found.",
   },
 };
 

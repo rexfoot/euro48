@@ -1,14 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CITIES } from "@/lib/constants";
+import { CITIES, COUNTRIES, type CountryCode } from "@/lib/constants";
 import { project } from "@/lib/geo";
+import { LANDMARKS, LANDMARK_ICON_SVG } from "@/lib/landmarks";
+import { useLocale } from "./LocaleProvider";
 
 const WIDTH = 600;
 const HEIGHT = 520;
 
-export function Map2DFallback({ cityCounts }: { cityCounts: Record<string, number> }) {
+export function Map2DFallback({
+  cityCounts,
+  countryCounts,
+}: {
+  cityCounts: Record<string, number>;
+  countryCounts: Record<CountryCode, number>;
+}) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const [hovered, setHovered] = useState<CountryCode | null>(null);
   const maxCount = Math.max(1, ...Object.values(cityCounts));
 
   return (
@@ -47,6 +58,57 @@ export function Map2DFallback({ cityCounts }: { cityCounts: Record<string, numbe
           </g>
         );
       })}
+
+      {LANDMARKS.map((l) => {
+        const { x, y } = project(l.lat, l.lng, WIDTH, HEIGHT);
+        const name = COUNTRIES.find((c) => c.code === l.country)?.name[locale] ?? l.country;
+        const count = countryCounts[l.country] ?? 0;
+        const isHovered = hovered === l.country;
+        return (
+          <g
+            key={l.country}
+            transform={`translate(${x}, ${y}) scale(${isHovered ? 1.25 : 1})`}
+            className="cursor-pointer"
+            onMouseEnter={() => setHovered(l.country)}
+            onMouseLeave={() => setHovered((h) => (h === l.country ? null : h))}
+            onClick={() => router.push(`/${l.country.toLowerCase()}`)}
+          >
+            <circle
+              r={10}
+              fill="url(#landmark-badge-fill)"
+              stroke={isHovered ? "#F5C15A" : "rgba(245,193,90,0.55)"}
+              strokeWidth={1.5}
+            />
+            <g
+              transform="translate(-8,-8) scale(0.67)"
+              style={{ color: "#F5C15A" }}
+              dangerouslySetInnerHTML={{ __html: LANDMARK_ICON_SVG[l.country] }}
+            />
+            {isHovered && (
+              <g transform="translate(0,-16)">
+                <text
+                  textAnchor="middle"
+                  y={-6}
+                  fill="var(--foreground)"
+                  fontSize={11}
+                  stroke="var(--panel)"
+                  strokeWidth={3}
+                  paintOrder="stroke"
+                >
+                  {name} · +{count}
+                </text>
+              </g>
+            )}
+          </g>
+        );
+      })}
+
+      <defs>
+        <radialGradient id="landmark-badge-fill" cx="32%" cy="28%">
+          <stop offset="0%" stopColor="#1c2536" />
+          <stop offset="100%" stopColor="#0a0e17" />
+        </radialGradient>
+      </defs>
     </svg>
   );
 }

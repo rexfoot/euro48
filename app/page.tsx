@@ -18,7 +18,7 @@ export default async function Home() {
 
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />
-        <GlobeView cityCounts={cityCounts} />
+        <GlobeView cityCounts={cityCounts} countryCounts={countryCounts} />
       </section>
 
       <section className="mx-auto w-full max-w-5xl flex-1 px-4 pb-12">
