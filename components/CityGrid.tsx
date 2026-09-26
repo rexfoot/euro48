@@ -23,19 +23,21 @@ function CityLink({
   );
 }
 
-// Cities with offers are shown first (busiest up front, spec: never look
-// empty); the search below finds ANY real city in the country — GeoNames-
-// backed, ~44k towns across our 15 countries — even with zero offers
-// right now, so a search for e.g. "Mulhouse" always finds it.
+// Search is always visible, up front — it finds ANY real city in the
+// country (GeoNames-backed, ~44k towns across our 15 countries), even
+// with zero offers right now, so e.g. "Mulhouse" is always findable.
+// Below it: cities with offers first (busiest up front, spec: never look
+// empty) when there's no active search.
 export function CityGrid({ country, counts }: { country: CountryCode; counts: Record<string, number> }) {
   const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<string[] | null>(null);
 
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, TOP_N);
+  const searching = query.trim().length >= 2;
 
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (!searching) {
       setResults(null);
       return;
     }
@@ -50,35 +52,24 @@ export function CityGrid({ country, counts }: { country: CountryCode; counts: Re
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, country]);
+  }, [query, country, searching]);
 
   return (
     <div>
+      <label className="mb-2 block text-base font-semibold sm:text-lg">{t(locale, "city_search_label")}</label>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t(locale, "search_city")}
+        className="mb-5 w-full rounded-xl border border-border bg-panel px-4 py-3 text-base outline-none focus:border-accent-amber/50"
+      />
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-        {top.map(([city, count]) => (
-          <CityLink key={city} country={country} city={city} count={count} locale={locale} />
+        {(searching ? results ?? [] : top.map(([city]) => city)).map((city) => (
+          <CityLink key={city} country={country} city={city} count={counts[city] ?? 0} locale={locale} />
         ))}
       </div>
-
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm text-muted hover:text-foreground">
-          {t(locale, "all_cities")}
-        </summary>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t(locale, "search_city")}
-          className="mt-3 mb-3 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent-amber/50"
-        />
-        {results !== null && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {results.map((city) => (
-              <CityLink key={city} country={country} city={city} count={counts[city] ?? 0} locale={locale} />
-            ))}
-          </div>
-        )}
-      </details>
     </div>
   );
 }
