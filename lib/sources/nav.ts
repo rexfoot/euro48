@@ -1,5 +1,5 @@
-import { OTHER_CITY } from "../constants";
-import { canonicalizeCity, matchSpecialty } from "../classify";
+import { resolveCity, matchSpecialty } from "../classify";
+import { getCityIndex } from "../city-index";
 import type { NewOffer } from "../offers";
 
 // Norway's public employment service (NAV / arbeidsplassen.no). Official
@@ -64,6 +64,7 @@ export async function fetchNavOffers(): Promise<NewOffer[]> {
   }
 
   const items = data.items ?? [];
+  const cityIndex = await getCityIndex();
 
   return items
     .map((item): NewOffer | null => {
@@ -73,7 +74,7 @@ export async function fetchNavOffers(): Promise<NewOffer[]> {
       const specialty = matchSpecialty(entry.title);
       if (!specialty) return null;
 
-      const city = (entry.municipal && canonicalizeCity([entry.municipal])) || OTHER_CITY;
+      const { city, lat, lng } = resolveCity(cityIndex, entry.municipal ? [entry.municipal] : [], "NO");
 
       return {
         id: `nav:${item.id}`,
@@ -84,6 +85,8 @@ export async function fetchNavOffers(): Promise<NewOffer[]> {
         company: entry.businessName || "—",
         countryCode: "NO",
         city,
+        cityLat: lat,
+        cityLng: lng,
         specialty,
         contractType: null,
         salaryRaw: null,

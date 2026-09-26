@@ -1,5 +1,6 @@
 import { LANGUAGE_BY_COUNTRY } from "../constants";
-import { canonicalizeCityWithCountry, matchSpecialty } from "../classify";
+import { resolveCityWithCountry, matchSpecialty } from "../classify";
+import { getCityIndex, type CityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -35,11 +36,11 @@ async function fetchPage(page: number): Promise<ArbeitnowJob[]> {
   }
 }
 
-function build(job: ArbeitnowJob): NewOffer | null {
+function build(job: ArbeitnowJob, cityIndex: CityIndex): NewOffer | null {
   const parts = job.location.split(",").map((p) => p.trim()).filter(Boolean);
-  const match = canonicalizeCityWithCountry(parts);
+  const match = resolveCityWithCountry(cityIndex, parts);
   if (!match) return null; // no known city and no country mentioned — can't place it in any of our 15
-  const { city, country } = match;
+  const { city, country, lat, lng } = match;
 
   const specialty = matchSpecialty(job.title);
   if (!specialty) return null;
@@ -53,6 +54,8 @@ function build(job: ArbeitnowJob): NewOffer | null {
     company: job.company_name || "—",
     countryCode: country,
     city,
+    cityLat: lat,
+    cityLng: lng,
     specialty,
     contractType: job.job_types?.length ? job.job_types.join(", ") : null,
     salaryRaw: null,
@@ -69,8 +72,11 @@ function build(job: ArbeitnowJob): NewOffer | null {
 // meaningfully wider slice than page 1 alone without hammering it.
 export async function fetchArbeitnowOffers(): Promise<NewOffer[]> {
   const pages = Array.from({ length: PAGES_PER_RUN }, (_, i) => i + 1);
-  const perPage = await mapWithConcurrency(pages, PAGE_CONCURRENCY, fetchPage);
+  const [perPage, cityIndex] = await Promise.all([
+    mapWithConcurrency(pages, PAGE_CONCURRENCY, fetchPage),
+    getCityIndex(),
+  ]);
   const jobs = perPage.flat();
 
-  return jobs.map(build).filter((offer): offer is NewOffer => offer !== null);
+  return jobs.map((job) => build(job, cityIndex)).filter((offer): offer is NewOffer => offer !== null);
 }

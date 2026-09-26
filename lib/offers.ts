@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
-import { COUNTRY_CODES, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
+import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
 
 export type Offer = {
   id: string;
@@ -12,6 +12,8 @@ export type Offer = {
   company: string;
   country_code: CountryCode;
   city: string;
+  city_lat: number | null;
+  city_lng: number | null;
   specialty: SpecialtyId;
   contract_type: string | null;
   salary_raw: string | null;
@@ -33,6 +35,8 @@ export type NewOffer = {
   company: string;
   countryCode: CountryCode;
   city: string;
+  cityLat?: number | null;
+  cityLng?: number | null;
   specialty: SpecialtyId;
   contractType?: string | null;
   salaryRaw?: string | null;
@@ -109,6 +113,21 @@ export async function getActiveLocationBreakdown(): Promise<
   );
 }
 
+// Cities that currently have offers, with their coordinates — for the "no
+// offers here, try nearby" empty state (real distance, see lib/city-index).
+export async function getActiveCitiesWithCoords(
+  country: CountryCode
+): Promise<{ city: string; lat: number; lng: number; count: number }[]> {
+  return query(
+    `SELECT city, city_lat AS lat, city_lng AS lng, count(*)::int AS count
+     FROM offers
+     WHERE country_code = $1 AND published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'
+       AND city_lat IS NOT NULL AND city_lng IS NOT NULL AND city != $2
+     GROUP BY city, city_lat, city_lng`,
+    [country, OTHER_CITY]
+  );
+}
+
 export async function countVisibleOffers(): Promise<number> {
   const rows = await query<{ count: string }>(
     `SELECT count(*) FROM offers WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
@@ -147,7 +166,7 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       continue;
     }
     // City is open (2026-09-26): any real place name from a source is
-    // accepted (see canonicalizeCity) — only country and specialty stay
+    // accepted (see lib/classify.ts#resolveCity) — only country and specialty stay
     // closed lists.
     if (!SPECIALTY_IDS.includes(offer.specialty)) {
       skipped++;
@@ -179,6 +198,8 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       offer.source,
       offer.publishedAt.toISOString(),
       fingerprint,
+      offer.cityLat ?? null,
+      offer.cityLng ?? null,
     ];
 
     try {
@@ -186,8 +207,8 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
         `INSERT INTO offers (
            id, title_original, title_en, title_fr, title_es, company,
            country_code, city, specialty, contract_type, salary_raw, remote,
-           language_of_ad, url, source, published_at, fingerprint
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+           language_of_ad, url, source, published_at, fingerprint, city_lat, city_lng
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
          ON CONFLICT (fingerprint) DO UPDATE SET
            title_original = EXCLUDED.title_original,
            title_en = EXCLUDED.title_en,
@@ -198,7 +219,9 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            published_at = EXCLUDED.published_at,
            contract_type = EXCLUDED.contract_type,
            salary_raw = EXCLUDED.salary_raw,
-           remote = EXCLUDED.remote
+           remote = EXCLUDED.remote,
+           city_lat = EXCLUDED.city_lat,
+           city_lng = EXCLUDED.city_lng
          WHERE EXCLUDED.published_at > offers.published_at
          RETURNING id`,
         values
@@ -221,7 +244,8 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
         `UPDATE offers SET
            title_original = $2, title_en = $3, title_fr = $4, title_es = $5,
            city = $8, specialty = $9, contract_type = $10, salary_raw = $11, remote = $12,
-           url = $14, source = $15, published_at = $16, fingerprint = $17
+           url = $14, source = $15, published_at = $16, fingerprint = $17,
+           city_lat = $18, city_lng = $19
          WHERE id = $1 AND $16::timestamptz > published_at`,
         values
       );

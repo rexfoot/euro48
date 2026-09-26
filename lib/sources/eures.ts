@@ -1,5 +1,6 @@
-import { OTHER_CITY, type CountryCode } from "../constants";
-import { canonicalizeCity, matchSpecialty } from "../classify";
+import type { CountryCode } from "../constants";
+import { resolveCity, matchSpecialty } from "../classify";
+import { getCityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -68,6 +69,7 @@ export async function fetchEuresOffersForCountry(
   page = 1,
   isOverBudget: () => boolean = () => false
 ): Promise<NewOffer[]> {
+  const cityIndex = await getCityIndex();
   const body = JSON.stringify({
     resultsPerPage: RESULTS_PER_COUNTRY,
     page,
@@ -115,7 +117,7 @@ export async function fetchEuresOffersForCountry(
     if (!profile) return null;
 
     const location = profile.locations?.find((l) => l.cityName);
-    const city = (location?.cityName && canonicalizeCity([location.cityName])) || OTHER_CITY;
+    const { city, lat, lng } = resolveCity(cityIndex, location?.cityName ? [location.cityName] : [], country);
 
     const specialty = matchSpecialty(profile.title);
     if (!specialty) return null;
@@ -129,6 +131,8 @@ export async function fetchEuresOffersForCountry(
       company: profile.employer?.name || "—",
       countryCode: country,
       city,
+      cityLat: lat,
+      cityLng: lng,
       specialty,
       contractType: profile.positionOfferingCode ?? null,
       salaryRaw: formatSalary(profile),

@@ -47,3 +47,29 @@ CREATE TABLE IF NOT EXISTS worker_cursors (
   cursor     JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Full GeoNames "cities1000" reference for our 15 countries (2026-09-26):
+-- every real city/town with population >= 1000, with alternate names in
+-- other languages/scripts. Used to (a) recognize the real city behind an
+-- offer's raw location text, replacing the old hand-written closed list,
+-- and (b) let the country page's city search find any real city even
+-- with zero current offers. Loaded once via scripts/import-geonames — not
+-- meant to change often, so no auto-refresh job for it.
+CREATE TABLE IF NOT EXISTS cities (
+  geoname_id   INTEGER PRIMARY KEY,
+  name         TEXT NOT NULL,
+  ascii_name   TEXT NOT NULL,
+  alt_names    TEXT,
+  country_code TEXT NOT NULL,
+  population   INTEGER NOT NULL DEFAULT 0,
+  lat          DOUBLE PRECISION NOT NULL,
+  lng          DOUBLE PRECISION NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS cities_country_ascii_idx ON cities (country_code, ascii_name);
+
+-- Where each offer's matched city actually is — lets the "no offers here"
+-- empty state suggest the nearest cities that do have some, by real
+-- distance instead of guessing.
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lat DOUBLE PRECISION;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lng DOUBLE PRECISION;

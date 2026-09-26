@@ -1,5 +1,6 @@
-import { LANGUAGE_BY_COUNTRY, OTHER_CITY, type CountryCode } from "../constants";
-import { canonicalizeCity, matchSpecialty } from "../classify";
+import { LANGUAGE_BY_COUNTRY, type CountryCode } from "../constants";
+import { resolveCity, matchSpecialty } from "../classify";
+import { getCityIndex } from "../city-index";
 import type { NewOffer } from "../offers";
 
 const BASE_URL = "https://api.adzuna.com/v1/api/jobs";
@@ -59,6 +60,7 @@ export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1
   }
 
   const jobs = data.results ?? [];
+  const cityIndex = await getCityIndex();
 
   return jobs
     .map((job): NewOffer | null => {
@@ -66,7 +68,7 @@ export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1
         ...(job.location?.area ? [...job.location.area].reverse() : []),
         job.location?.display_name ?? "",
       ];
-      const city = canonicalizeCity(candidates) ?? OTHER_CITY;
+      const { city, lat, lng } = resolveCity(cityIndex, candidates, country);
 
       const specialty = matchSpecialty(job.title);
       if (!specialty) return null;
@@ -86,6 +88,8 @@ export async function fetchAdzunaOffersForCountry(country: CountryCode, page = 1
         company: job.company?.display_name || "—",
         countryCode: country,
         city,
+        cityLat: lat,
+        cityLng: lng,
         specialty,
         contractType: job.contract_type ?? job.contract_time ?? null,
         salaryRaw,

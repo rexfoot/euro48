@@ -31,6 +31,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     other_locations: "Autres localisations",
     all_cities: "Toutes les villes",
     search_city: "Chercher une ville…",
+    no_offers_city: "Pas de nouvelles offres ici pour le moment.",
+    nearby_cities: "Villes les plus proches avec des offres :",
+    km_away: "à {n} km",
   },
   es: {
     counter_prefix: "+",
@@ -56,6 +59,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     other_locations: "Otras ubicaciones",
     all_cities: "Todas las ciudades",
     search_city: "Buscar una ciudad…",
+    no_offers_city: "No hay ofertas nuevas aquí ahora mismo.",
+    nearby_cities: "Ciudades más cercanas con ofertas:",
+    km_away: "a {n} km",
   },
   en: {
     counter_prefix: "+",
@@ -81,6 +87,9 @@ export const UI: Record<Locale, Record<string, string>> = {
     other_locations: "Other locations",
     all_cities: "All cities",
     search_city: "Search a city…",
+    no_offers_city: "No new offers here right now.",
+    nearby_cities: "Nearest cities with offers:",
+    km_away: "{n} km away",
   },
 };
 

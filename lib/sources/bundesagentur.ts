@@ -1,5 +1,6 @@
-import { citiesForCountry, OTHER_CITY, type CityName } from "../constants";
-import { canonicalizeCity, matchSpecialty } from "../classify";
+import { citiesForCountry, type CityName } from "../constants";
+import { resolveCity, matchSpecialty } from "../classify";
+import { getCityIndex, type CityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
 
@@ -35,7 +36,7 @@ type BaSearchResult = {
   ergebnisliste?: BaJob[];
 };
 
-async function fetchForCity(city: CityName): Promise<NewOffer[]> {
+async function fetchForCity(city: CityName, cityIndex: CityIndex): Promise<NewOffer[]> {
   const url = new URL(SEARCH_URL);
   url.searchParams.set("wo", city);
   url.searchParams.set("umkreis", String(RADIUS_KM));
@@ -60,7 +61,7 @@ async function fetchForCity(city: CityName): Promise<NewOffer[]> {
   return jobs
     .map((job): NewOffer | null => {
       const ort = job.stellenlokationen?.[0]?.adresse?.ort;
-      const matchedCity = (ort && canonicalizeCity([ort])) || OTHER_CITY;
+      const { city: matchedCity, lat, lng } = resolveCity(cityIndex, ort ? [ort] : [], "DE");
 
       const specialty = matchSpecialty(`${job.stellenangebotsTitel} ${job.hauptberuf ?? ""}`);
       if (!specialty) return null;
@@ -78,6 +79,8 @@ async function fetchForCity(city: CityName): Promise<NewOffer[]> {
         company: job.firma || "—",
         countryCode: "DE",
         city: matchedCity,
+        cityLat: lat,
+        cityLng: lng,
         specialty,
         contractType: job.vertragsdauer ?? null,
         salaryRaw: null,
@@ -94,6 +97,7 @@ async function fetchForCity(city: CityName): Promise<NewOffer[]> {
 }
 
 export async function fetchBundesagenturOffers(): Promise<NewOffer[]> {
-  const perCity = await mapWithConcurrency(DE_CITIES, CITY_CONCURRENCY, fetchForCity);
+  const cityIndex = await getCityIndex();
+  const perCity = await mapWithConcurrency(DE_CITIES, CITY_CONCURRENCY, (city) => fetchForCity(city, cityIndex));
   return perCity.flat();
 }

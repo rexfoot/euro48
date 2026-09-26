@@ -1,5 +1,5 @@
-import { OTHER_CITY } from "../constants";
-import { canonicalizeCity, matchSpecialty } from "../classify";
+import { resolveCity, matchSpecialty } from "../classify";
+import { getCityIndex } from "../city-index";
 import type { NewOffer } from "../offers";
 
 // Sweden's public employment service (Arbetsförmedlingen / JobTech).
@@ -42,6 +42,7 @@ export async function fetchJobTechOffers(): Promise<NewOffer[]> {
   }
 
   const hits = data.hits ?? [];
+  const cityIndex = await getCityIndex();
 
   return hits
     .map((hit): NewOffer | null => {
@@ -49,7 +50,7 @@ export async function fetchJobTechOffers(): Promise<NewOffer[]> {
       if (!specialty) return null;
 
       const cityRaw = hit.workplace_address?.city ?? hit.workplace_address?.municipality ?? "";
-      const city = (cityRaw && canonicalizeCity([cityRaw])) || OTHER_CITY;
+      const { city, lat, lng } = resolveCity(cityIndex, cityRaw ? [cityRaw] : [], "SE");
 
       return {
         id: `jobtech:${hit.id}`,
@@ -60,6 +61,8 @@ export async function fetchJobTechOffers(): Promise<NewOffer[]> {
         company: hit.employer?.name || "—",
         countryCode: "SE",
         city,
+        cityLat: lat,
+        cityLng: lng,
         specialty,
         contractType: hit.employment_type?.label ?? null,
         salaryRaw: null,
