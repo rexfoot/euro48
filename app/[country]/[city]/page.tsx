@@ -1,23 +1,43 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { COUNTRY_CODES, CITIES, type CountryCode } from "@/lib/constants";
 import { getVisibleOffers } from "@/lib/offers";
 import { countsBySpecialty } from "@/lib/aggregate";
 import { SpecialtyGrid } from "@/components/SpecialtyGrid";
 import { BackLink, SectionLabel } from "@/components/Localized";
+import { pageAlternates, countryNameFr } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export default async function CityPage({
-  params,
-}: {
-  params: Promise<{ country: string; city: string }>;
-}) {
-  const { country: countryParam, city: cityParam } = await params;
+type Props = { params: Promise<{ country: string; city: string }> };
+
+function resolveCity(countryParam: string, cityParam: string) {
   const code = countryParam.toUpperCase() as CountryCode;
   const city = decodeURIComponent(cityParam);
+  if (!COUNTRY_CODES.includes(code)) return null;
+  if (!(city in CITIES) || CITIES[city as keyof typeof CITIES].country !== code) return null;
+  return { code, city };
+}
 
-  if (!COUNTRY_CODES.includes(code)) notFound();
-  if (!(city in CITIES) || CITIES[city as keyof typeof CITIES].country !== code) notFound();
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { country: countryParam, city: cityParam } = await params;
+  const resolved = resolveCity(countryParam, cityParam);
+  if (!resolved) return {};
+
+  const { code, city } = resolved;
+  const country = countryNameFr(code);
+  return {
+    title: `Offres d'emploi à ${city}, ${country} (48h)`,
+    description: `Les offres d'emploi publiées ces dernières 48h à ${city} (${country}), classées par spécialité. Sans doublons.`,
+    alternates: pageAlternates(`/${code.toLowerCase()}/${encodeURIComponent(city)}`),
+  };
+}
+
+export default async function CityPage({ params }: Props) {
+  const { country: countryParam, city: cityParam } = await params;
+  const resolved = resolveCity(countryParam, cityParam);
+  if (!resolved) notFound();
+  const { code, city } = resolved;
 
   const offers = await getVisibleOffers({ country: code, city, limit: 500 });
   const specialtyCounts = countsBySpecialty(offers);

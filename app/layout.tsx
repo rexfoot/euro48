@@ -4,6 +4,8 @@ import "./globals.css";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SITE_URL } from "@/lib/constants";
+import { pageAlternates } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Euro48 — Europe's jobs from the last 48 hours",
-  description: "Ofertas de Europa de las últimas 48 horas. Sin repeticiones.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Euro48 — Offres d'emploi en Europe des dernières 48h",
+    template: "%s | Euro48",
+  },
+  description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 15 pays. Sans doublons.",
+  alternates: pageAlternates("/"),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

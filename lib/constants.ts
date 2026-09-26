@@ -180,3 +180,5 @@ export type Locale = (typeof LOCALES)[number];
 export const OFFER_VISIBLE_HOURS = 48;
 export const OFFER_DELETE_HOURS = 72;
 export const MAX_VISIBLE_OFFERS = 2000;
+
+export const SITE_URL = "https://euro48.com";

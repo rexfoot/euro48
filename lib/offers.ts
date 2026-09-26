@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
 import { CITIES, COUNTRY_CODES, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
@@ -73,10 +74,12 @@ export async function getVisibleOffers(filters: {
   );
 }
 
-export async function getOfferById(id: string): Promise<Offer | null> {
+// Wrapped in React's cache() so generateMetadata and the page body — both
+// looking up the same offer for the same request — share one DB query.
+export const getOfferById = cache(async (id: string): Promise<Offer | null> => {
   const rows = await query<Offer>(`SELECT * FROM offers WHERE id = $1 LIMIT 1`, [id]);
   return rows[0] ?? null;
-}
+});
 
 export async function countVisibleOffers(): Promise<number> {
   const rows = await query<{ count: string }>(

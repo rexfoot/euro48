@@ -1,17 +1,30 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { COUNTRY_CODES, citiesForCountry, type CountryCode } from "@/lib/constants";
 import { getVisibleOffers } from "@/lib/offers";
 import { countsByCity } from "@/lib/aggregate";
 import { CityGrid } from "@/components/CityGrid";
 import { BackLink, CountryName, SectionLabel } from "@/components/Localized";
+import { pageAlternates, countryNameFr } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export default async function CountryPage({
-  params,
-}: {
-  params: Promise<{ country: string }>;
-}) {
+type Props = { params: Promise<{ country: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { country: countryParam } = await params;
+  const code = countryParam.toUpperCase() as CountryCode;
+  if (!COUNTRY_CODES.includes(code)) return {};
+
+  const name = countryNameFr(code);
+  return {
+    title: `Offres d'emploi en ${name} (48h)`,
+    description: `Toutes les offres d'emploi publiées ces dernières 48h en ${name}, classées par ville et spécialité. Sans doublons.`,
+    alternates: pageAlternates(`/${countryParam.toLowerCase()}`),
+  };
+}
+
+export default async function CountryPage({ params }: Props) {
   const { country: countryParam } = await params;
   const code = countryParam.toUpperCase() as CountryCode;
   if (!COUNTRY_CODES.includes(code)) notFound();
