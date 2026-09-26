@@ -73,3 +73,44 @@ CREATE INDEX IF NOT EXISTS cities_country_ascii_idx ON cities (country_code, asc
 -- distance instead of guessing.
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lat DOUBLE PRECISION;
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lng DOUBLE PRECISION;
+
+-- Job alerts (2026-09-27): a subscriber picks specialties + countries and
+-- gets only matching offers, via Telegram (instant) and/or email (1-2x/day
+-- digest) — never both a chat and a support channel, just delivery + stop.
+CREATE TABLE IF NOT EXISTS alert_subscriptions (
+  id                  TEXT PRIMARY KEY,             -- also the unsubscribe token
+  email               TEXT,
+  telegram_chat_id    TEXT,
+  telegram_link_token TEXT,                          -- pending until /start completes the deep link
+  specialties         TEXT[] NOT NULL,
+  countries           TEXT[] NOT NULL,
+  channel_email       BOOLEAN NOT NULL DEFAULT false,
+  channel_telegram    BOOLEAN NOT NULL DEFAULT false,
+  active              BOOLEAN NOT NULL DEFAULT true,
+  locale              TEXT NOT NULL DEFAULT 'fr',    -- site locale at signup, for notification text
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS alert_subscriptions_active_idx ON alert_subscriptions (active);
+CREATE UNIQUE INDEX IF NOT EXISTS alert_subscriptions_link_token_idx
+  ON alert_subscriptions (telegram_link_token) WHERE telegram_link_token IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS alert_subscriptions_chat_id_idx
+  ON alert_subscriptions (telegram_chat_id) WHERE telegram_chat_id IS NOT NULL;
+
+ALTER TABLE alert_subscriptions
+  ADD CONSTRAINT alert_subscriptions_specialties_allowed
+  CHECK (specialties <@ ARRAY['hospitality','logistics','healthcare','construction','retail','industry','transport','it']);
+
+ALTER TABLE alert_subscriptions
+  ADD CONSTRAINT alert_subscriptions_countries_allowed
+  CHECK (countries <@ ARRAY['DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS']);
+
+-- One row per (subscription, offer, channel) ever sent — the source of
+-- truth for "only new matches, never the same offer twice".
+CREATE TABLE IF NOT EXISTS alert_deliveries (
+  subscription_id TEXT NOT NULL REFERENCES alert_subscriptions(id) ON DELETE CASCADE,
+  offer_id        TEXT NOT NULL,
+  channel         TEXT NOT NULL,
+  sent_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (subscription_id, offer_id, channel)
+);

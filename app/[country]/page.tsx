@@ -4,7 +4,7 @@ import { COUNTRY_CODES, type CountryCode } from "@/lib/constants";
 import { getVisibleOffers } from "@/lib/offers";
 import { countsByCity } from "@/lib/aggregate";
 import { CityGrid } from "@/components/CityGrid";
-import { BackLink, CountryName, SectionLabel } from "@/components/Localized";
+import { BackLink, CountryName, SectionLabel, HousingLink } from "@/components/Localized";
 import { pageAlternates, countryNameFr } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -38,7 +38,10 @@ export default async function CountryPage({ params }: Props) {
       <h1 className="mt-2 mb-1 text-2xl font-semibold">
         <CountryName code={code} />
       </h1>
-      <p className="mb-6 text-sm text-accent-amber">+{offers.length}</p>
+      <p className="mb-4 text-sm text-accent-amber">+{offers.length}</p>
+      <div className="mb-6">
+        <HousingLink code={code} />
+      </div>
       <SectionLabel labelKey="choose_city" />
       <div className="mt-3">
         <CityGrid country={code} counts={cityCounts} />
