@@ -41,6 +41,17 @@ function addTo(map: Map<string, CityRecord>, key: string, record: CityRecord) {
   if (!existing || record.population > existing.population) map.set(key, record);
 }
 
+// A small town's GeoNames alternate names occasionally happen to coincide
+// with a big non-European city's name in another language (found live
+// 2026-09-27: a ~2,000-person Balearic island town's Spanish-language
+// alternate name is literally "San Francisco", which was swallowing real
+// San Francisco, CA postings from Greenhouse/Lever into the global
+// cross-country index). Below this population, only the town's own
+// official name/ascii_name go into the *global* map — its alt_names still
+// go into its own country's map (no ambiguity risk there, since that's
+// only consulted once a source already told us the country).
+const GLOBAL_ALT_NAME_POPULATION_FLOOR = 50_000;
+
 async function buildCityIndex(): Promise<CityIndex> {
   const rows = await query<CityRow>(`SELECT name, ascii_name, alt_names, country_code, population, lat, lng FROM cities`);
   const global_ = new Map<string, CityRecord>();
@@ -48,7 +59,8 @@ async function buildCityIndex(): Promise<CityIndex> {
 
   for (const row of rows) {
     const record: CityRecord = { name: row.name, country: row.country_code, lat: row.lat, lng: row.lng, population: row.population };
-    const names = [row.name, row.ascii_name, ...(row.alt_names ? row.alt_names.split(",") : [])];
+    const ownNames = [row.name, row.ascii_name];
+    const altNames = row.alt_names ? row.alt_names.split(",") : [];
 
     let countryMap = byCountry.get(row.country_code);
     if (!countryMap) {
@@ -56,10 +68,16 @@ async function buildCityIndex(): Promise<CityIndex> {
       byCountry.set(row.country_code, countryMap);
     }
 
-    for (const raw of names) {
+    for (const raw of ownNames) {
       const key = normalizeForFingerprint(raw);
       if (!key) continue;
       addTo(global_, key, record);
+      addTo(countryMap, key, record);
+    }
+    for (const raw of altNames) {
+      const key = normalizeForFingerprint(raw);
+      if (!key) continue;
+      if (row.population >= GLOBAL_ALT_NAME_POPULATION_FLOOR) addTo(global_, key, record);
       addTo(countryMap, key, record);
     }
   }
