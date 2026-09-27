@@ -5,6 +5,7 @@
   --foreground: #ffffff;
   --accent-amber: #f5c15a;
   --accent-red: #e5484d;
+  --accent-orange: #fb7a24;
   --panel: #0d1420;
   --border: #1c2536;
   --muted: #8792a6;
@@ -15,6 +16,7 @@
   --color-foreground: var(--foreground);
   --color-accent-amber: var(--accent-amber);
   --color-accent-red: var(--accent-red);
+  --color-accent-orange: var(--accent-orange);
   --color-panel: var(--panel);
   --color-border: var(--border);
   --color-muted: var(--muted);

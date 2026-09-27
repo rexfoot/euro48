@@ -23,7 +23,7 @@ export default async function Home() {
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />
         <div className="sticky top-0 z-30 w-full max-w-xl bg-background/95 py-2 backdrop-blur-sm md:static md:bg-transparent md:py-0 md:backdrop-blur-none">
-          <SearchBar />
+          <SearchBar hideKeyword />
         </div>
         <GlobeView cityCounts={cityCounts} countryCounts={countryCounts} />
       </section>
