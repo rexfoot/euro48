@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
-import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
+import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, MAX_VISIBLE_OFFERS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
 
 export type Offer = {
   id: string;
@@ -79,7 +79,7 @@ export async function getVisibleOffers(filters: {
     );
   }
 
-  const limit = Math.min(filters.limit ?? 200, 2000);
+  const limit = Math.min(filters.limit ?? 200, MAX_VISIBLE_OFFERS);
   params.push(limit);
 
   const rows = await query<Offer>(

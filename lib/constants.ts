@@ -208,7 +208,10 @@ export type Locale = (typeof LOCALES)[number];
 
 export const OFFER_VISIBLE_HOURS = 48;
 export const OFFER_DELETE_HOURS = 72;
-export const MAX_VISIBLE_OFFERS = 2000;
+// Raised from 2000 on 2026-09-27, once the volume-collapse bug (see
+// db/schema.sql, offers_specialty_allowed) was fixed and supply could
+// actually reach — and exceed — the old cap.
+export const MAX_VISIBLE_OFFERS = 6000;
 
 export const SITE_URL = "https://euro48.com";
 

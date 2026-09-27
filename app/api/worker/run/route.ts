@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COUNTRY_CODES } from "@/lib/constants";
+import { COUNTRY_CODES, MAX_VISIBLE_OFFERS } from "@/lib/constants";
 import { fetchEuresOffersForCountry, EURES_MAX_PAGE } from "@/lib/sources/eures";
 import { ADZUNA_COUNTRIES, ADZUNA_MAX_PAGE, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
@@ -8,6 +8,8 @@ import { fetchJobTechOffers } from "@/lib/sources/jobtech";
 import { fetchNavOffers } from "@/lib/sources/nav";
 import { fetchFranceTravailOffers } from "@/lib/sources/francetravail";
 import { fetchLeforemOffers } from "@/lib/sources/leforem";
+import { fetchGreenhouseOffers } from "@/lib/sources/greenhouse";
+import { fetchLeverOffers } from "@/lib/sources/lever";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -32,7 +34,7 @@ async function purgeExpired() {
       FROM offers
       WHERE published_at >= now() - interval '48 hours'
     )
-    DELETE FROM offers WHERE id IN (SELECT id FROM ranked WHERE rn > 2000)
+    DELETE FROM offers WHERE id IN (SELECT id FROM ranked WHERE rn > ${MAX_VISIBLE_OFFERS})
   `);
 }
 
@@ -154,6 +156,18 @@ async function runLeforem() {
   return { leforem: result };
 }
 
+async function runGreenhouse() {
+  const offers = await fetchGreenhouseOffers();
+  const result = await upsertOffers(offers);
+  return { greenhouse: result };
+}
+
+async function runLever() {
+  const offers = await fetchLeverOffers();
+  const result = await upsertOffers(offers);
+  return { lever: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, CountResult>>> = {
   eures: runEures,
   adzuna: runAdzuna,
@@ -163,6 +177,8 @@ const SOURCES: Record<string, (country?: string) => Promise<Record<string, Count
   nav: runNav,
   francetravail: runFranceTravail,
   leforem: runLeforem,
+  greenhouse: runGreenhouse,
+  lever: runLever,
 };
 
 export async function POST(req: NextRequest) {

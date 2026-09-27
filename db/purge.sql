@@ -2,7 +2,7 @@
 --   published_at >= 48h -> hidden from display (handled by app query filter, not deletion)
 --   published_at >= 72h -> hard delete
 --   dead links (404/expired) -> deleted by the worker as it detects them, not here
---   cap ~2000 visible offers -> evict oldest beyond the cap
+--   cap ~6000 visible offers -> evict oldest beyond the cap
 
 -- 1. Hard delete anything older than 72h.
 DELETE FROM offers
@@ -18,4 +18,4 @@ WITH ranked AS (
   WHERE published_at >= now() - interval '48 hours'
 )
 DELETE FROM offers
-WHERE id IN (SELECT id FROM ranked WHERE rn > 2000);
+WHERE id IN (SELECT id FROM ranked WHERE rn > 6000);

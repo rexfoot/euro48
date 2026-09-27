@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { query } from "./db";
-import type { CountryCode, Locale, SpecialtyId } from "./constants";
+import { MAX_VISIBLE_OFFERS, type CountryCode, type Locale, type SpecialtyId } from "./constants";
 import type { Offer } from "./offers";
 
 export type AlertSubscription = {
@@ -147,7 +147,7 @@ export async function recordDeliveries(subscriptionId: string, offerIds: string[
 // 48h backlog the moment they connect — only genuinely new offers from
 // here on count as "new".
 export async function markCurrentMatchesDelivered(subscription: AlertSubscription, channel: string): Promise<void> {
-  const matches = await getUndeliveredMatches(subscription, channel as "telegram" | "email", 2000);
+  const matches = await getUndeliveredMatches(subscription, channel as "telegram" | "email", MAX_VISIBLE_OFFERS);
   await recordDeliveries(subscription.id, matches.map((o) => o.id), channel);
 }
 
