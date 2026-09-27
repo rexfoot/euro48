@@ -35,9 +35,15 @@ ALTER TABLE offers
   ADD CONSTRAINT offers_country_code_allowed
   CHECK (country_code IN ('DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS'));
 
+-- 'other' added 2026-09-27: this constraint was never updated when the
+-- "other" catch-all specialty shipped, so every offer classified as
+-- "other" (common — that's the whole point of the catch-all) crashed the
+-- INSERT with a check-constraint violation, taking the rest of that
+-- source's batch down with it. Root cause of the volume collapse across
+-- every source, not a per-source pagination limit.
 ALTER TABLE offers
   ADD CONSTRAINT offers_specialty_allowed
-  CHECK (specialty IN ('hospitality','logistics','healthcare','construction','retail','industry','transport','it'));
+  CHECK (specialty IN ('hospitality','logistics','healthcare','construction','retail','industry','transport','it','other'));
 
 -- Per-source rotation state (e.g. "which country/page did EURES/Adzuna
 -- fetch last run") so successive worker runs sample a wider slice of each
@@ -97,9 +103,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS alert_subscriptions_link_token_idx
 CREATE UNIQUE INDEX IF NOT EXISTS alert_subscriptions_chat_id_idx
   ON alert_subscriptions (telegram_chat_id) WHERE telegram_chat_id IS NOT NULL;
 
+-- 'other' added 2026-09-27, same fix as offers_specialty_allowed above.
 ALTER TABLE alert_subscriptions
   ADD CONSTRAINT alert_subscriptions_specialties_allowed
-  CHECK (specialties <@ ARRAY['hospitality','logistics','healthcare','construction','retail','industry','transport','it']);
+  CHECK (specialties <@ ARRAY['hospitality','logistics','healthcare','construction','retail','industry','transport','it','other']);
 
 ALTER TABLE alert_subscriptions
   ADD CONSTRAINT alert_subscriptions_countries_allowed

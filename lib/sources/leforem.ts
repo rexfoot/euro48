@@ -1,6 +1,7 @@
 import { OFFER_VISIBLE_HOURS } from "../constants";
 import { resolveCity, matchSpecialty } from "../classify";
 import { getCityIndex, type CityIndex } from "../city-index";
+import { getCursor, setCursor } from "../worker-state";
 import type { NewOffer } from "../offers";
 
 // Le Forem (Wallonia's public employment service) publishes its job offers
@@ -23,9 +24,9 @@ type LeforemRecord = {
   datedebutdiffusion: string; // date only, e.g. "2026-09-27" — no time of day
 };
 
-type LeforemResponse = { results?: LeforemRecord[] };
+type LeforemResponse = { total_count?: number; results?: LeforemRecord[] };
 
-async function fetchPage(offset: number, sinceDate: string): Promise<LeforemRecord[]> {
+async function fetchPage(offset: number, sinceDate: string): Promise<{ results: LeforemRecord[]; totalCount: number }> {
   const url = new URL(BASE_URL);
   url.searchParams.set("limit", String(PAGE_SIZE));
   url.searchParams.set("offset", String(offset));
@@ -36,13 +37,13 @@ async function fetchPage(offset: number, sinceDate: string): Promise<LeforemReco
     const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!res.ok) {
       console.error(`[leforem] HTTP ${res.status} — ${(await res.text()).slice(0, 300)}`);
-      return [];
+      return { results: [], totalCount: 0 };
     }
     const data = (await res.json()) as LeforemResponse;
-    return data.results ?? [];
+    return { results: data.results ?? [], totalCount: data.total_count ?? 0 };
   } catch (err) {
     console.error(`[leforem] fetch threw — ${(err as Error).message}`);
-    return [];
+    return { results: [], totalCount: 0 };
   }
 }
 
@@ -74,17 +75,37 @@ function build(job: LeforemRecord, cityIndex: CityIndex): NewOffer {
   };
 }
 
+// 2026-09-27: this used to always start at offset 0, so every 12-min run
+// re-fetched the exact same top ~500 (order_by is a stable sort on a
+// date-only field, so "today" doesn't reshuffle within the day) — leaving
+// most of a 2000+/48h dataset never actually fetched. Now rotates through
+// the full result set across runs via a DB cursor, the same pattern EURES
+// and Adzuna already use for their own per-run limits.
 export async function fetchLeforemOffers(): Promise<NewOffer[]> {
   const since = new Date(Date.now() - OFFER_VISIBLE_HOURS * 3_600_000);
   const sinceDate = since.toISOString().slice(0, 10);
 
+  const cursor = await getCursor<{ offset?: number }>("leforem");
+  let offset = cursor.offset ?? 0;
+
   const cityIndex = await getCityIndex();
   const jobs: LeforemRecord[] = [];
+  let totalCount = 0;
+  let reachedEnd = false;
+
   for (let i = 0; i < PAGES_PER_RUN; i++) {
-    const page = await fetchPage(i * PAGE_SIZE, sinceDate);
-    jobs.push(...page);
-    if (page.length < PAGE_SIZE) break; // last page reached
+    const page = await fetchPage(offset, sinceDate);
+    totalCount = page.totalCount;
+    jobs.push(...page.results);
+    offset += PAGE_SIZE;
+    if (page.results.length < PAGE_SIZE) {
+      reachedEnd = true;
+      break;
+    }
   }
+
+  const nextOffset = reachedEnd || (totalCount > 0 && offset >= totalCount) ? 0 : offset;
+  await setCursor("leforem", { offset: nextOffset });
 
   return jobs.map((job) => build(job, cityIndex));
 }
