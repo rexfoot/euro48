@@ -4,7 +4,7 @@ import { pageAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "À propos",
-  description: "Comment fonctionne Euro48 : la règle des 48h, la déduplication des offres, et les 15 pays couverts.",
+  description: "Comment fonctionne Euro48 : la règle des 48h, la déduplication des offres, et les 18 pays couverts.",
   alternates: pageAlternates("/about"),
 };
 

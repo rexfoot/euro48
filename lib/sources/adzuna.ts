@@ -7,13 +7,16 @@ const BASE_URL = "https://api.adzuna.com/v1/api/jobs";
 const RESULTS_PER_CALL = Number(process.env.ADZUNA_RESULTS_PER_CALL ?? 50);
 const FETCH_TIMEOUT_MS = 15_000;
 
-// Countries Adzuna's API actually supports, verified live against our 15
-// (Adzuna returns UNSUPPORTED_COUNTRY for the rest: LU, IE, NO, DK, SE, FI, IS).
-export const ADZUNA_COUNTRIES: CountryCode[] = ["DE", "NL", "CH", "BE", "AT", "FR", "ES", "IT"];
+// Countries Adzuna's API actually supports, verified live (Adzuna returns
+// UNSUPPORTED_COUNTRY for the rest: LU, IE, NO, DK, SE, FI, IS, and — as of
+// the PT/PL/GB addition 2026-09-28 — PT too; GB and PL both work).
+export const ADZUNA_COUNTRIES: CountryCode[] = ["DE", "NL", "CH", "BE", "AT", "FR", "ES", "IT", "PL", "GB"];
 export const ADZUNA_MAX_PAGE = 2; // rotated across runs — see route.ts
 
 const CURRENCY_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
   CH: "CHF",
+  GB: "GBP",
+  PL: "PLN",
 };
 
 type AdzunaJob = {

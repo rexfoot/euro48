@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: "Euro48 — Offres d'emploi en Europe des dernières 48h",
     template: "%s | Euro48",
   },
-  description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 15 pays. Sans doublons.",
+  description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 18 pays. Sans doublons.",
   alternates: pageAlternates("/"),
   icons: {
     apple: "/icons/apple-touch-icon.png",

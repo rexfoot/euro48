@@ -31,9 +31,10 @@ CREATE INDEX IF NOT EXISTS offers_published_at_desc ON offers (published_at DESC
 CREATE INDEX IF NOT EXISTS offers_country_city_specialty ON offers (country_code, city, specialty);
 
 -- Enforce the closed lists at the DB level too, not just in app code.
+-- PT/PL/GB added 2026-09-28.
 ALTER TABLE offers
   ADD CONSTRAINT offers_country_code_allowed
-  CHECK (country_code IN ('DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS'));
+  CHECK (country_code IN ('DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS','PT','PL','GB'));
 
 -- 'other' added 2026-09-27: this constraint was never updated when the
 -- "other" catch-all specialty shipped, so every offer classified as
@@ -54,13 +55,16 @@ CREATE TABLE IF NOT EXISTS worker_cursors (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Full GeoNames "cities1000" reference for our 15 countries (2026-09-26):
+-- Full GeoNames "cities1000" reference for our covered countries
+-- (2026-09-26, originally 15; PT/PL/GB added 2026-09-28 the same way):
 -- every real city/town with population >= 1000, with alternate names in
 -- other languages/scripts. Used to (a) recognize the real city behind an
 -- offer's raw location text, replacing the old hand-written closed list,
 -- and (b) let the country page's city search find any real city even
--- with zero current offers. Loaded once via scripts/import-geonames — not
--- meant to change often, so no auto-refresh job for it.
+-- with zero current offers. Loaded once (not an in-repo script — a
+-- one-off run against cities1000.zip from download.geonames.org, filtered
+-- to the covered countries) — not meant to change often, so no
+-- auto-refresh job for it.
 CREATE TABLE IF NOT EXISTS cities (
   geoname_id   INTEGER PRIMARY KEY,
   name         TEXT NOT NULL,
@@ -108,9 +112,10 @@ ALTER TABLE alert_subscriptions
   ADD CONSTRAINT alert_subscriptions_specialties_allowed
   CHECK (specialties <@ ARRAY['hospitality','logistics','healthcare','construction','retail','industry','transport','it','other']);
 
+-- PT/PL/GB added 2026-09-28, same as offers_country_code_allowed above.
 ALTER TABLE alert_subscriptions
   ADD CONSTRAINT alert_subscriptions_countries_allowed
-  CHECK (countries <@ ARRAY['DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS']);
+  CHECK (countries <@ ARRAY['DE','NL','CH','LU','BE','AT','IE','FR','ES','IT','NO','DK','SE','FI','IS','PT','PL','GB']);
 
 -- One row per (subscription, offer, channel) ever sent — the source of
 -- truth for "only new matches, never the same offer twice".

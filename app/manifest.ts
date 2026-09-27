@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Euro48 — Offres d'emploi en Europe des dernières 48h",
     short_name: "Euro48",
-    description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 15 pays. Sans doublons.",
+    description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 18 pays. Sans doublons.",
     start_url: "/",
     scope: "/",
     display: "standalone",

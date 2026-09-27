@@ -17,6 +17,11 @@ export const COUNTRIES = [
   { code: "SE", name: { fr: "Suède", es: "Suecia", en: "Sweden" } },
   { code: "FI", name: { fr: "Finlande", es: "Finlandia", en: "Finland" } },
   { code: "IS", name: { fr: "Islande", es: "Islandia", en: "Iceland" } },
+  // Added 2026-09-28 — sourced via EURES (PT, PL) and Adzuna (PL, GB); PT
+  // isn't supported by Adzuna's API, GB isn't covered by EURES post-Brexit.
+  { code: "PT", name: { fr: "Portugal", es: "Portugal", en: "Portugal" } },
+  { code: "PL", name: { fr: "Pologne", es: "Polonia", en: "Poland" } },
+  { code: "GB", name: { fr: "Royaume-Uni", es: "Reino Unido", en: "United Kingdom" } },
 ] as const;
 
 export type CountryCode = (typeof COUNTRIES)[number]["code"];
@@ -226,6 +231,9 @@ export const COUNTRY_FLAG_COLORS: Record<CountryCode, string[]> = {
   SE: ["#2f6fa8", "#f0c23a"],
   FI: ["#eceef0", "#3d6fc4"],
   IS: ["#2f5fa8", "#eceef0", "#d6394a"],
+  PT: ["#046a38", "#f0c23a", "#da3a3a"],
+  PL: ["#eceef0", "#d6394a"],
+  GB: ["#2c3e8c", "#e2434a", "#eceef0"],
 };
 
 export function flagGradient(code: CountryCode): string {
@@ -252,6 +260,9 @@ export const COUNTRY_ACCENT_COLOR: Record<CountryCode, string> = {
   SE: "#2f6fa8",
   FI: "#3d6fc4",
   IS: "#d6394a",
+  PT: "#1f9d5c",
+  PL: "#d6394a",
+  GB: "#2c3e8c",
 };
 
 export const URGENT_KEYWORDS = [
@@ -263,6 +274,7 @@ export const URGENT_KEYWORDS = [
 // API doesn't report the ad's language directly (Adzuna, Arbeitnow).
 export const LANGUAGE_BY_COUNTRY: Partial<Record<CountryCode, string>> = {
   DE: "de", NL: "nl", CH: "de", BE: "fr", AT: "de", FR: "fr", ES: "es", IT: "it",
+  PT: "pt", PL: "pl", GB: "en",
 };
 
 export const LOCALES = ["fr", "es", "en"] as const;

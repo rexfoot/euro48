@@ -20,4 +20,7 @@ export const HOUSING_PORTALS: Record<CountryCode, { name: string; url: string }>
   SE: { name: "Hemnet", url: "https://www.hemnet.se/" },
   FI: { name: "Etuovi", url: "https://www.etuovi.com/" },
   IS: { name: "Fasteignir.is", url: "https://fasteignir.is/" },
+  PT: { name: "Imovirtual", url: "https://www.imovirtual.com/" },
+  PL: { name: "Otodom", url: "https://www.otodom.pl/" },
+  GB: { name: "Rightmove", url: "https://www.rightmove.co.uk/" },
 };

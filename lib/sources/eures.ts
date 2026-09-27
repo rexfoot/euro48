@@ -1,4 +1,4 @@
-import type { CountryCode } from "../constants";
+import { COUNTRY_CODES, type CountryCode } from "../constants";
 import { resolveCity, matchSpecialty } from "../classify";
 import { getCityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
@@ -11,6 +11,11 @@ const PORTAL_URL = "https://europa.eu/eures/portal/jv-se/jv-details/";
 const RESULTS_PER_COUNTRY = Number(process.env.EURES_RESULTS_PER_COUNTRY ?? 25);
 const DETAIL_CONCURRENCY = Number(process.env.EURES_DETAIL_CONCURRENCY ?? 6);
 export const EURES_MAX_PAGE = 4; // rotated across runs — see route.ts
+
+// GB isn't part of the EURES job-mobility network post-Brexit — verified
+// live 2026-09-28 (the search API itself responds 200 but always returns 0
+// results for locationCodes: ["gb"]). Covered via Adzuna instead.
+export const EURES_COUNTRIES: CountryCode[] = COUNTRY_CODES.filter((c) => c !== "GB");
 
 type EuresSearchResult = {
   jvs: { id: string; creationDate: number }[];

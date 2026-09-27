@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COUNTRY_CODES, MAX_VISIBLE_OFFERS } from "@/lib/constants";
-import { fetchEuresOffersForCountry, EURES_MAX_PAGE } from "@/lib/sources/eures";
+import { MAX_VISIBLE_OFFERS } from "@/lib/constants";
+import { fetchEuresOffersForCountry, EURES_MAX_PAGE, EURES_COUNTRIES } from "@/lib/sources/eures";
 import { ADZUNA_COUNTRIES, ADZUNA_MAX_PAGE, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
 import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
@@ -69,7 +69,7 @@ async function runEures() {
   const pageByCountry = cursor.pageByCountry ?? {};
   const isOverBudget = makeDeadline(EURES_TIME_BUDGET_MS);
 
-  const perCountry = await mapWithConcurrency(COUNTRY_CODES, COUNTRY_CONCURRENCY, async (country) => {
+  const perCountry = await mapWithConcurrency(EURES_COUNTRIES, COUNTRY_CONCURRENCY, async (country) => {
     const page = pageByCountry[country] ?? 1;
     const offers = isOverBudget() ? [] : await fetchEuresOffersForCountry(country, page, isOverBudget);
     const result = await upsertOffers(offers);
