@@ -65,6 +65,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     search_button: "Chercher",
     search_results_for: "{n} résultat(s) pour « {q} »",
     search_results_count: "{n} résultat(s)",
+    recent_offers: "Offres récentes",
+    see_all_alerts: "Recevoir les alertes",
   },
   es: {
     counter_prefix: "+",
@@ -124,6 +126,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     search_button: "Buscar",
     search_results_for: "{n} resultado(s) para «{q}»",
     search_results_count: "{n} resultado(s)",
+    recent_offers: "Ofertas recientes",
+    see_all_alerts: "Recibir alertas",
   },
   en: {
     counter_prefix: "+",
@@ -183,6 +187,8 @@ export const UI: Record<Locale, Record<string, string>> = {
     search_button: "Search",
     search_results_for: "{n} result(s) for \"{q}\"",
     search_results_count: "{n} result(s)",
+    recent_offers: "Recent offers",
+    see_all_alerts: "Get alerts",
   },
 };
 

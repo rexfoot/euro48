@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CITIES, COUNTRIES, type CountryCode } from "@/lib/constants";
+import { CITIES, COUNTRIES, countryBadgeKeys, flagUrl, type CountryCode } from "@/lib/constants";
 import { project } from "@/lib/geo";
-import { LANDMARKS, LANDMARK_ICON_SVG } from "@/lib/landmarks";
+import { LANDMARKS } from "@/lib/landmarks";
 import { useLocale } from "./LocaleProvider";
+import { t } from "@/lib/i18n";
 
 const WIDTH = 600;
 const HEIGHT = 520;
@@ -63,12 +64,15 @@ export function Map2DFallback({
         const { x, y } = project(l.lat, l.lng, WIDTH, HEIGHT);
         const name = COUNTRIES.find((c) => c.code === l.country)?.name[locale] ?? l.country;
         const count = countryCounts[l.country] ?? 0;
+        const hasOffers = count > 0;
+        const badgeLabel = countryBadgeKeys(l.country).map((k) => t(locale, k)).join(" · ");
         const isHovered = hovered === l.country;
         return (
           <g
             key={l.country}
             transform={`translate(${x}, ${y}) scale(${isHovered ? 1.25 : 1})`}
             className="cursor-pointer"
+            opacity={hasOffers ? 1 : 0.45}
             onMouseEnter={() => setHovered(l.country)}
             onMouseLeave={() => setHovered((h) => (h === l.country ? null : h))}
             onClick={() => router.push(`/${l.country.toLowerCase()}`)}
@@ -76,14 +80,22 @@ export function Map2DFallback({
             <circle
               r={10}
               fill="url(#landmark-badge-fill)"
-              stroke={isHovered ? "#F5C15A" : "rgba(245,193,90,0.55)"}
+              stroke={isHovered && hasOffers ? "#F5C15A" : hasOffers ? "rgba(245,193,90,0.55)" : "rgba(148,163,184,0.35)"}
               strokeWidth={1.5}
             />
-            <g
-              transform="translate(-8,-8) scale(0.67)"
-              style={{ color: "#F5C15A" }}
-              dangerouslySetInnerHTML={{ __html: LANDMARK_ICON_SVG[l.country] }}
+            <image
+              href={flagUrl(l.country)}
+              x={-9}
+              y={-9}
+              width={18}
+              height={18}
+              clipPath="url(#pin-flag-clip)"
+              preserveAspectRatio="xMidYMid slice"
+              style={hasOffers ? undefined : { filter: "grayscale(0.6)" }}
             />
+            <text textAnchor="middle" y={22} fontSize={9} fontWeight={600} fill={hasOffers ? "#F5C15A" : "#94a3b8"}>
+              {hasOffers ? `+${count}` : "—"}
+            </text>
             {isHovered && (
               <g transform="translate(0,-16)">
                 <text
@@ -95,7 +107,7 @@ export function Map2DFallback({
                   strokeWidth={3}
                   paintOrder="stroke"
                 >
-                  {name} · +{count}
+                  {name}{badgeLabel ? ` · ${badgeLabel}` : ""}
                 </text>
               </g>
             )}
@@ -108,6 +120,9 @@ export function Map2DFallback({
           <stop offset="0%" stopColor="#1c2536" />
           <stop offset="100%" stopColor="#0a0e17" />
         </radialGradient>
+        <clipPath id="pin-flag-clip">
+          <circle r={9} />
+        </clipPath>
       </defs>
     </svg>
   );

@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import type { GlobeMethods } from "react-globe.gl";
-import { CITIES, COUNTRIES, type CountryCode } from "@/lib/constants";
-import { LANDMARKS, LANDMARK_ICON_SVG } from "@/lib/landmarks";
+import { CITIES, COUNTRIES, countryBadgeKeys, flagUrl, type CountryCode } from "@/lib/constants";
+import { LANDMARKS } from "@/lib/landmarks";
 import { useLocale } from "./LocaleProvider";
+import { t } from "@/lib/i18n";
 import { GlobeCountrySearch } from "./GlobeCountrySearch";
 import { Map2DFallback } from "./Map2DFallback";
+
+const MOBILE_BREAKPOINT = "(max-width: 767px)";
 
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
@@ -26,6 +29,7 @@ type LandmarkPoint = {
   country: CountryCode;
   name: string;
   count: number;
+  badgeLabel: string;
 };
 
 // NASA Blue Marble / topology textures — public domain, bundled examples
@@ -48,6 +52,18 @@ export function GlobeView({
   const [size, setSize] = useState({ width: 320, height: 320 });
   const [useFallback, setUseFallback] = useState(false);
   const [checkingPerf, setCheckingPerf] = useState(true);
+  // No WebGL on phones at all (spec 2026-09-27): never even fetch the
+  // react-globe.gl chunk there, never show "loading the globe" — the
+  // country grid below already carries the exact same flag+count data.
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_BREAKPOINT);
+    setIsMobile(mql.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     function updateSize() {
@@ -62,7 +78,7 @@ export function GlobeView({
   }, []);
 
   useEffect(() => {
-    if (useFallback) return;
+    if (useFallback || isMobile) return;
     let frames = 0;
     const start = performance.now();
     let raf: number;
@@ -84,7 +100,7 @@ export function GlobeView({
     }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [useFallback]);
+  }, [useFallback, isMobile]);
 
   function goToCountry(code: CountryCode) {
     const landmark = LANDMARKS.find((l) => l.country === code);
@@ -114,13 +130,14 @@ export function GlobeView({
     country: l.country,
     name: COUNTRIES.find((c) => c.code === l.country)?.name[locale] ?? l.country,
     count: countryCounts[l.country] ?? 0,
+    badgeLabel: countryBadgeKeys(l.country).map((k) => t(locale, k)).join(" · "),
   }));
 
   return (
     <div className="mx-auto w-full max-w-xl">
       <GlobeCountrySearch onSelect={goToCountry} />
 
-      {useFallback ? (
+      {isMobile ? null : useFallback ? (
         <div ref={containerRef} className="w-full">
           <Map2DFallback cityCounts={cityCounts} countryCounts={countryCounts} />
         </div>
@@ -168,31 +185,37 @@ export function GlobeView({
             htmlLng={(d: object) => (d as LandmarkPoint).lng}
             htmlElement={(d: object) => {
               const p = d as LandmarkPoint;
+              const hasOffers = p.count > 0;
               const wrap = document.createElement("div");
-              wrap.style.cssText = "position:relative;transform:translate(-50%,-100%);cursor:pointer;";
+              wrap.style.cssText = "position:relative;transform:translate(-50%,-100%);cursor:pointer;display:flex;flex-direction:column;align-items:center;";
               wrap.innerHTML = `
-                <div data-badge style="width:32px;height:32px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
-                  background:radial-gradient(circle at 32% 28%, #1c2536, #0a0e17);
-                  border:1.5px solid rgba(245,193,90,0.55);
+                <div data-badge style="width:28px;height:28px;border-radius:9999px;overflow:hidden;
+                  background:#0a0e17;
+                  border:1.5px solid ${hasOffers ? "rgba(245,193,90,0.55)" : "rgba(148,163,184,0.35)"};
                   box-shadow:0 2px 8px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.08);
+                  opacity:${hasOffers ? 1 : 0.45}; filter:${hasOffers ? "none" : "grayscale(0.6)"};
                   transition:transform 150ms ease, border-color 150ms ease;">
-                  <svg viewBox="0 0 24 24" width="16" height="16" style="color:#F5C15A;">${LANDMARK_ICON_SVG[p.country]}</svg>
+                  <img src="${flagUrl(p.country)}" alt="" style="width:100%;height:100%;object-fit:cover;" />
+                </div>
+                <div data-count style="margin-top:2px;font-size:10px;font-weight:600;line-height:1;
+                  color:${hasOffers ? "#F5C15A" : "#94a3b8"};">
+                  ${hasOffers ? `+${p.count}` : "—"}
                 </div>
                 <div data-tooltip style="position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
                   white-space:nowrap;background:#0d1420;border:1px solid #1c2536;color:#ffffff;font-size:11px;
                   padding:4px 9px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity 150ms ease;">
-                  ${p.name} · +${p.count}
+                  ${p.name}${p.badgeLabel ? ` · ${p.badgeLabel}` : ""}
                 </div>`;
               const badge = wrap.querySelector("[data-badge]") as HTMLElement;
               const tooltip = wrap.querySelector("[data-tooltip]") as HTMLElement;
               wrap.addEventListener("mouseenter", () => {
                 badge.style.transform = "scale(1.18)";
-                badge.style.borderColor = "#F5C15A";
+                if (hasOffers) badge.style.borderColor = "#F5C15A";
                 tooltip.style.opacity = "1";
               });
               wrap.addEventListener("mouseleave", () => {
                 badge.style.transform = "scale(1)";
-                badge.style.borderColor = "rgba(245,193,90,0.55)";
+                if (hasOffers) badge.style.borderColor = "rgba(245,193,90,0.55)";
                 tooltip.style.opacity = "0";
               });
               wrap.addEventListener("click", () => router.push(`/${p.country.toLowerCase()}`));
@@ -209,7 +232,7 @@ export function GlobeView({
           />
         </div>
       )}
-      {checkingPerf && !useFallback && (
+      {!isMobile && checkingPerf && !useFallback && (
         <p className="mt-2 text-center text-xs text-muted">Chargement du globe…</p>
       )}
     </div>

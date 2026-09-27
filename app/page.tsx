@@ -5,8 +5,11 @@ import { GlobeView } from "@/components/GlobeView";
 import { Counter } from "@/components/Counter";
 import { CountryGrid } from "@/components/CountryGrid";
 import { SearchBar } from "@/components/SearchBar";
+import { RecentOffersSection } from "@/components/RecentOffersSection";
 
 export const revalidate = 60;
+
+const RECENT_OFFERS_COUNT = 10;
 
 export default async function Home() {
   const offers = await getVisibleOffers({ limit: 500 });
@@ -15,17 +18,25 @@ export default async function Home() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <Ticker offers={offers.slice(0, 30)} />
+      {/* An auto-scrolling marquee isn't a comfortable mobile tap target —
+          desktop keeps it, phones get RecentOffersSection below instead. */}
+      <div className="hidden md:block">
+        <Ticker offers={offers.slice(0, 30)} />
+      </div>
 
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />
-        <SearchBar />
+        <div className="sticky top-0 z-30 w-full max-w-xl bg-background/95 py-2 backdrop-blur-sm md:static md:bg-transparent md:py-0 md:backdrop-blur-none">
+          <SearchBar />
+        </div>
         <GlobeView cityCounts={cityCounts} countryCounts={countryCounts} />
       </section>
 
       <section className="mx-auto w-full max-w-5xl flex-1 px-4 pb-12">
         <CountryGrid counts={countryCounts} />
       </section>
+
+      <RecentOffersSection offers={offers.slice(0, RECENT_OFFERS_COUNT)} />
     </main>
   );
 }

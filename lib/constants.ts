@@ -178,6 +178,20 @@ export const HIGH_SALARY_COUNTRIES: CountryCode[] = ["CH", "LU", "NO", "DK", "IE
 export const CLIMATE_COUNTRIES: CountryCode[] = ["ES", "IT"];
 export const HIGH_DEMAND_COUNTRIES: CountryCode[] = ["NL", "DE", "BE", "AT", "CH"];
 
+// i18n keys of whichever badges apply to a country — shared by the country
+// grid and the globe's flag pins so the two never drift apart.
+export function flagUrl(code: CountryCode): string {
+  return `https://flagcdn.com/h80/${code.toLowerCase()}.png`;
+}
+
+export function countryBadgeKeys(code: CountryCode): string[] {
+  const keys: string[] = [];
+  if (HIGH_SALARY_COUNTRIES.includes(code)) keys.push("high_salary");
+  if (CLIMATE_COUNTRIES.includes(code)) keys.push("climate");
+  if (HIGH_DEMAND_COUNTRIES.includes(code)) keys.push("high_demand");
+  return keys;
+}
+
 export const URGENT_KEYWORDS = [
   "immédiat", "immediat", "asap", "ab sofort", "pourvue rapidement",
   "urgente", "immediato", "urgent", "dringend", "spoedig",
