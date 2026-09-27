@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { COUNTRIES, SPECIALTIES, type CountryCode } from "@/lib/constants";
+import { COUNTRIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
@@ -12,25 +12,34 @@ import { t } from "@/lib/i18n";
 // further down, in the spot the old "Chercher un pays…" country-name
 // search used to sit, right above the map — both fields submit together
 // to /search even though they're not next to each other on the page.
-// Focusing the keyword box empty (spec 2026-09-27) shows the list of
-// métiers to pick from directly, no typing required.
+// Focusing the keyword box empty shows the list of métiers to pick from
+// directly, no typing required — picking one fills the box with its name
+// and waits for "Chercher" (spec 2026-09-27: pick, then press Chercher,
+// not an immediate jump).
 export function HomeSearch() {
   const router = useRouter();
   const { locale } = useLocale();
   const [q, setQ] = useState("");
   const [country, setCountry] = useState<CountryCode | "">("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyId | "">("");
   const [showSpecialties, setShowSpecialties] = useState(false);
+
+  function onQChange(value: string) {
+    setQ(value);
+    setSelectedSpecialty(""); // free typing overrides a pill pick
+  }
+
+  function pickSpecialty(id: SpecialtyId, name: string) {
+    setSelectedSpecialty(id);
+    setQ(name);
+    setShowSpecialties(false);
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
-    if (country) params.set("country", country);
-    router.push(`/search?${params.toString()}`);
-  }
-
-  function goToSpecialty(specialtyId: string) {
-    const params = new URLSearchParams({ specialty: specialtyId });
+    if (selectedSpecialty) params.set("specialty", selectedSpecialty);
+    else if (q.trim()) params.set("q", q.trim());
     if (country) params.set("country", country);
     router.push(`/search?${params.toString()}`);
   }
@@ -68,7 +77,7 @@ export function HomeSearch() {
         <input
           type="text"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => onQChange(e.target.value)}
           onFocus={() => setShowSpecialties(true)}
           onBlur={() => setTimeout(() => setShowSpecialties(false), 150)}
           placeholder={t(locale, "search_offer_placeholder")}
@@ -81,7 +90,7 @@ export function HomeSearch() {
                 <button
                   key={s.id}
                   type="button"
-                  onMouseDown={() => goToSpecialty(s.id)}
+                  onMouseDown={() => pickSpecialty(s.id, s.name[locale])}
                   className="rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-accent-blue hover:text-accent-blue"
                 >
                   {s.name[locale]}
