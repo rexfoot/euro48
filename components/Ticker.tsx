@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Offer } from "@/lib/offers";
+import { flagUrl } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { titleFor, cityLabel } from "@/lib/offer-display";
 
@@ -37,7 +38,11 @@ export function Ticker({ offers }: { offers: Offer[] }) {
             href={`/job/${encodeURIComponent(offer.id)}`}
             className="flex items-center gap-2 whitespace-nowrap text-sm hover:underline"
           >
-            <span className="text-accent-amber">●</span>
+            <img
+              src={flagUrl(offer.country_code)}
+              alt=""
+              className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover"
+            />
             {titleFor(offer, locale)}
             <span className="text-muted">
               · {offer.company} · {cityLabel(offer.city, locale, offer.country_code)}
