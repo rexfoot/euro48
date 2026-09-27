@@ -64,14 +64,18 @@ type FtOffer = {
 
 type FtSearchResult = { resultats?: FtOffer[] };
 
-// "75001 - PARIS 1ER ARRDT" / "64200 - BIARRITZ" -> strip the postal-code
-// prefix and any arrondissement suffix so what's left matches a real
-// GeoNames city name.
-const POSTAL_PREFIX = /^\d{4,5}\s*-\s*/;
-const ARRONDISSEMENT_SUFFIX = /\s+\d+(er|e|ème)?\s+arrdt$/i;
+// Real format (verified live against 150 offers, 2026-09-27): "33 -
+// Arcachon", "972 - LE MORNE ROUGE", "2A - Ajaccio" — a 2-3 digit (or
+// Corsica's 2A/2B) département code, NOT a 4-5 digit postal code as
+// originally assumed, which meant this never stripped and every city
+// lookup failed. Paris/Marseille (only cities split into arrondissements)
+// also need their numbered-district suffix stripped: "75 - Paris 12e
+// Arrondissement" -> "Paris", "13 - MARSEILLE 02" -> "MARSEILLE".
+const DEPT_PREFIX = /^(2[AB]|\d{2,3})\s*-\s*/i;
+const ARRONDISSEMENT_SUFFIX = /\s+\d{1,2}(er|e|ème|eme)?(\s*arrondissement)?$/i;
 
 function cleanLibelle(libelle: string): string {
-  return libelle.replace(POSTAL_PREFIX, "").replace(ARRONDISSEMENT_SUFFIX, "").trim();
+  return libelle.replace(DEPT_PREFIX, "").replace(ARRONDISSEMENT_SUFFIX, "").trim();
 }
 
 function isoNoMillis(d: Date): string {
