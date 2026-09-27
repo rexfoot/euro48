@@ -5,6 +5,12 @@ import type { Offer } from "@/lib/offers";
 import { useLocale } from "./LocaleProvider";
 import { titleFor, cityLabel } from "@/lib/offer-display";
 
+// Seconds each offer stays visible while it crosses the screen — kept
+// constant regardless of how many offers are shown, so the ticker reads
+// at the same easy pace whether there are 5 offers or 30 (spec
+// 2026-09-27: slow enough to read and tap, not just glance at).
+const SECONDS_PER_OFFER = 7;
+
 export function Ticker({ offers }: { offers: Offer[] }) {
   const { locale } = useLocale();
 
@@ -17,10 +23,14 @@ export function Ticker({ offers }: { offers: Offer[] }) {
   }
 
   const items = [...offers, ...offers]; // duplicate for seamless loop
+  const duration = offers.length * SECONDS_PER_OFFER;
 
   return (
     <div className="group overflow-hidden border-y border-border bg-panel py-2">
-      <div className="flex w-max animate-[ticker_60s_linear_infinite] gap-10 group-hover:[animation-play-state:paused]">
+      <div
+        className="flex w-max gap-10 group-hover:[animation-play-state:paused]"
+        style={{ animation: `ticker ${duration}s linear infinite` }}
+      >
         {items.map((offer, i) => (
           <Link
             key={`${offer.id}-${i}`}

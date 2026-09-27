@@ -18,11 +18,7 @@ export default async function Home() {
 
   return (
     <main className="flex flex-1 flex-col">
-      {/* An auto-scrolling marquee isn't a comfortable mobile tap target —
-          desktop keeps it, phones get RecentOffersSection below instead. */}
-      <div className="hidden md:block">
-        <Ticker offers={offers.slice(0, 30)} />
-      </div>
+      <Ticker offers={offers.slice(0, 30)} />
 
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />

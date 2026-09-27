@@ -6,9 +6,9 @@ import { OfferCard } from "./OfferCard";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
-// Mobile home only (spec 2026-09-27, block C, section 5): a ticker you
-// can't comfortably tap mid-scroll is no substitute for an actual
-// clickable list, so phones get this instead — desktop keeps the ticker.
+// Mobile home only (spec 2026-09-27, block C, section 5): a plain
+// scrollable list of recent offers, in addition to the ticker at the top
+// (also on mobile since 2026-09-27, slowed down to stay tappable there).
 export function RecentOffersSection({ offers }: { offers: Offer[] }) {
   const { locale } = useLocale();
 
