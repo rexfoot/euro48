@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { COUNTRY_CODES, type CountryCode } from "@/lib/constants";
+import { COUNTRY_CODES, SPECIALTY_IDS, type CountryCode, type SpecialtyId } from "@/lib/constants";
 import { getVisibleOffers } from "@/lib/offers";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
@@ -8,7 +8,7 @@ import { pageAlternates } from "@/lib/seo";
 
 export const revalidate = 0;
 
-type Props = { searchParams: Promise<{ q?: string; country?: string }> };
+type Props = { searchParams: Promise<{ q?: string; country?: string; specialty?: string }> };
 
 // Arbitrary query params, no evergreen content of its own — never indexed,
 // never in the sitemap (spec 2026-09-27, block B).
@@ -26,12 +26,20 @@ function resolveCountry(country?: string): CountryCode | undefined {
   return code && COUNTRY_CODES.includes(code as CountryCode) ? (code as CountryCode) : undefined;
 }
 
+function resolveSpecialty(specialty?: string): SpecialtyId | undefined {
+  return specialty && SPECIALTY_IDS.includes(specialty as SpecialtyId) ? (specialty as SpecialtyId) : undefined;
+}
+
 export default async function SearchPage({ searchParams }: Props) {
-  const { q: rawQ, country: rawCountry } = await searchParams;
+  const { q: rawQ, country: rawCountry, specialty: rawSpecialty } = await searchParams;
   const q = (rawQ ?? "").trim();
   const country = resolveCountry(rawCountry);
+  const specialty = resolveSpecialty(rawSpecialty);
 
-  const offers = q || country ? await getVisibleOffers({ q: q || undefined, country, limit: 200 }) : [];
+  const offers =
+    q || country || specialty
+      ? await getVisibleOffers({ q: q || undefined, country, specialty, limit: 200 })
+      : [];
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -40,7 +48,7 @@ export default async function SearchPage({ searchParams }: Props) {
       <div className="mt-4">
         <SearchBar defaultQuery={q} defaultCountry={country} />
       </div>
-      <SearchResults offers={offers} query={q} />
+      <SearchResults offers={offers} query={q} specialty={specialty} />
     </main>
   );
 }

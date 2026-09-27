@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { COUNTRIES, type CountryCode } from "@/lib/constants";
+import { COUNTRIES, SPECIALTIES, type CountryCode } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
@@ -12,16 +12,25 @@ import { t } from "@/lib/i18n";
 // further down, in the spot the old "Chercher un pays…" country-name
 // search used to sit, right above the map — both fields submit together
 // to /search even though they're not next to each other on the page.
+// Focusing the keyword box empty (spec 2026-09-27) shows the list of
+// métiers to pick from directly, no typing required.
 export function HomeSearch() {
   const router = useRouter();
   const { locale } = useLocale();
   const [q, setQ] = useState("");
   const [country, setCountry] = useState<CountryCode | "">("");
+  const [showSpecialties, setShowSpecialties] = useState(false);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
+    if (country) params.set("country", country);
+    router.push(`/search?${params.toString()}`);
+  }
+
+  function goToSpecialty(specialtyId: string) {
+    const params = new URLSearchParams({ specialty: specialtyId });
     if (country) params.set("country", country);
     router.push(`/search?${params.toString()}`);
   }
@@ -55,13 +64,33 @@ export function HomeSearch() {
         </button>
       </div>
 
-      <input
-        type="text"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={t(locale, "search_offer_placeholder")}
-        className="w-full rounded-xl border border-border bg-panel px-4 py-3 text-base outline-none focus:border-accent-amber/50"
-      />
+      <div className="relative w-full">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => setShowSpecialties(true)}
+          onBlur={() => setTimeout(() => setShowSpecialties(false), 150)}
+          placeholder={t(locale, "search_offer_placeholder")}
+          className="w-full rounded-xl border-2 border-accent-blue bg-panel px-4 py-3 text-base text-foreground shadow-[0_0_0_3px_rgba(47,143,255,0.15)] outline-none placeholder:text-accent-blue/70 focus:shadow-[0_0_0_4px_rgba(47,143,255,0.25)]"
+        />
+        {showSpecialties && q.trim() === "" && (
+          <div className="absolute z-20 mt-2 w-full rounded-xl border border-accent-blue/40 bg-panel p-2 shadow-lg">
+            <div className="flex flex-wrap gap-2">
+              {SPECIALTIES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onMouseDown={() => goToSpecialty(s.id)}
+                  className="rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-accent-blue hover:text-accent-blue"
+                >
+                  {s.name[locale]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </form>
   );
 }
