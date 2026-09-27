@@ -52,16 +52,28 @@ export function GlobeView({
   const [size, setSize] = useState({ width: 320, height: 320 });
   const [useFallback, setUseFallback] = useState(false);
   const [checkingPerf, setCheckingPerf] = useState(true);
-  // No WebGL on phones at all (spec 2026-09-27): never even fetch the
-  // react-globe.gl chunk there, never show "loading the globe" — the
-  // country grid below already carries the exact same flag+count data.
+  // No WebGL on phones at all (spec 2026-09-27): never fetch the
+  // react-globe.gl chunk there, never run the FPS probe — phones get the
+  // same flag pins via the lightweight 2D SVG map instead (Map2DFallback,
+  // no WebGL, no continuous re-render loop).
   const [isMobile, setIsMobile] = useState(false);
+  // A synchronous, instant read (no timed probe, no battery cost) —
+  // device-memory/core-count is a decent real-world proxy for "too old
+  // even for the lightweight map"; those phones get the flag grid
+  // further down the page instead (spec 2026-09-27).
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
 
   useEffect(() => {
     const mql = window.matchMedia(MOBILE_BREAKPOINT);
     setIsMobile(mql.matches);
     const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mql.addEventListener("change", onChange);
+
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lowMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory < 4;
+    const lowCores = typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency <= 2;
+    setIsLowEndDevice(lowMemory || lowCores);
+
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
@@ -133,15 +145,23 @@ export function GlobeView({
     badgeLabel: countryBadgeKeys(l.country).map((k) => t(locale, k)).join(" · "),
   }));
 
+  // Mobile: the same lightweight 2D map as desktop's slow-device
+  // fallback (no WebGL, so no `useFallback`/FPS gate needed there) —
+  // unless the device itself looks too old for that, in which case
+  // render nothing here and let the flag grid further down the page
+  // stand in for it.
+  const showGlobe = !isMobile && !useFallback;
+  const showFlagMap = isMobile ? !isLowEndDevice : useFallback;
+
   return (
     <div className="mx-auto w-full max-w-xl">
       <GlobeCountrySearch onSelect={goToCountry} />
 
-      {isMobile ? null : useFallback ? (
+      {showFlagMap ? (
         <div ref={containerRef} className="w-full">
-          <Map2DFallback cityCounts={cityCounts} countryCounts={countryCounts} />
+          <Map2DFallback cityCounts={cityCounts} countryCounts={countryCounts} reduceMotion={isMobile} />
         </div>
-      ) : (
+      ) : showGlobe ? (
         <div
           ref={containerRef}
           onMouseEnter={() => {
@@ -231,7 +251,7 @@ export function GlobeView({
             animateIn={false}
           />
         </div>
-      )}
+      ) : null}
       {!isMobile && checkingPerf && !useFallback && (
         <p className="mt-2 text-center text-xs text-muted">Chargement du globe…</p>
       )}

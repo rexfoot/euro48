@@ -14,9 +14,13 @@ const HEIGHT = 520;
 export function Map2DFallback({
   cityCounts,
   countryCounts,
+  reduceMotion = false,
 }: {
   cityCounts: Record<string, number>;
   countryCounts: Record<CountryCode, number>;
+  // Skips the pulsing-ring SMIL animations — used on mobile, where this
+  // map stands in for the globe and battery cost matters (spec 2026-09-27).
+  reduceMotion?: boolean;
 }) {
   const router = useRouter();
   const { locale } = useLocale();
@@ -49,7 +53,7 @@ export function Map2DFallback({
             className={count > 0 ? "cursor-pointer" : undefined}
             onClick={count > 0 ? () => router.push(`/${country.toLowerCase()}`) : undefined}
           >
-            {count > 0 && (
+            {count > 0 && !reduceMotion && (
               <circle r={r + 4} fill="var(--accent-amber)" opacity={0.25}>
                 <animate attributeName="r" values={`${r};${r + 8};${r}`} dur="2.5s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.25;0;0.25" dur="2.5s" repeatCount="indefinite" />
