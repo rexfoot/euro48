@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = titleFor(offer, "fr");
   const country = countryNameFr(offer.country_code as CountryCode);
-  const city = cityLabel(offer.city, "fr");
+  const city = cityLabel(offer.city, "fr", offer.country_code as CountryCode);
   return {
     title: `${title} — ${city}, ${country}`,
     description: `${title} chez ${offer.company} à ${city}, ${country}. Offre publiée il y a moins de 48h sur Euro48.`,

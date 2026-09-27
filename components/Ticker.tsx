@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import type { Offer } from "@/lib/offers";
 import { useLocale } from "./LocaleProvider";
-import { titleFor } from "@/lib/offer-display";
+import { titleFor, cityLabel } from "@/lib/offer-display";
 
 export function Ticker({ offers }: { offers: Offer[] }) {
   const { locale } = useLocale();
@@ -21,11 +22,17 @@ export function Ticker({ offers }: { offers: Offer[] }) {
     <div className="group overflow-hidden border-y border-border bg-panel py-2">
       <div className="flex w-max animate-[ticker_60s_linear_infinite] gap-10 group-hover:[animation-play-state:paused]">
         {items.map((offer, i) => (
-          <span key={`${offer.id}-${i}`} className="flex items-center gap-2 whitespace-nowrap text-sm">
+          <Link
+            key={`${offer.id}-${i}`}
+            href={`/job/${encodeURIComponent(offer.id)}`}
+            className="flex items-center gap-2 whitespace-nowrap text-sm hover:underline"
+          >
             <span className="text-accent-amber">●</span>
             {titleFor(offer, locale)}
-            <span className="text-muted">· {offer.company} · {offer.city}</span>
-          </span>
+            <span className="text-muted">
+              · {offer.company} · {cityLabel(offer.city, locale, offer.country_code)}
+            </span>
+          </Link>
         ))}
       </div>
       <style>{`

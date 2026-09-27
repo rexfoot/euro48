@@ -27,7 +27,7 @@ export function NearestCities({ country, cities }: { country: CountryCode; citie
               href={`/${country.toLowerCase()}/${encodeURIComponent(c.city)}`}
               className="flex items-center justify-between rounded-xl border border-border bg-panel px-4 py-3 transition-colors hover:border-accent-amber/50"
             >
-              <span className="text-sm font-medium">{cityLabel(c.city, locale)}</span>
+              <span className="text-sm font-medium">{cityLabel(c.city, locale, country)}</span>
               <span className="text-xs text-muted">
                 {t(locale, "km_away", { n: Math.round(c.distanceKm) })} · <span className="text-accent-amber">+{c.count}</span>
               </span>

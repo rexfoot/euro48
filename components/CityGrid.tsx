@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { CountryCode } from "@/lib/constants";
+import { OTHER_CITY, type CountryCode } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 import { cityLabel } from "@/lib/offer-display";
@@ -17,7 +17,7 @@ function CityLink({
       href={`/${country.toLowerCase()}/${encodeURIComponent(city)}`}
       className="flex items-center justify-between rounded-xl border border-border bg-panel px-4 py-3 transition-colors hover:border-accent-amber/50"
     >
-      <span className="text-sm font-medium">{cityLabel(city, locale)}</span>
+      <span className="text-sm font-medium">{cityLabel(city, locale, country)}</span>
       <span className="text-xs text-accent-amber">{count > 0 ? `+${count}` : "—"}</span>
     </Link>
   );
@@ -33,7 +33,12 @@ export function CityGrid({ country, counts }: { country: CountryCode; counts: Re
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<string[] | null>(null);
 
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, TOP_N);
+  // The "no city given" bucket is never a pickable city — those offers
+  // still show up via the country's own aggregate count, just not here.
+  const top = Object.entries(counts)
+    .filter(([city]) => city !== OTHER_CITY)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TOP_N);
   const searching = query.trim().length >= 2;
 
   useEffect(() => {

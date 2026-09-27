@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL, COUNTRY_CODES, MAX_VISIBLE_OFFERS } from "@/lib/constants";
+import { SITE_URL, COUNTRY_CODES, MAX_VISIBLE_OFFERS, OTHER_CITY } from "@/lib/constants";
 import { getVisibleOffers, getActiveLocationBreakdown } from "@/lib/offers";
 import { sitemapAlternates } from "@/lib/seo";
 
@@ -32,6 +32,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seenCityPaths = new Set<string>();
 
   for (const row of breakdown) {
+    if (row.city === OTHER_CITY) continue; // never an indexable "city" — see cityLabel
+
     const countryPath = `/${row.country_code.toLowerCase()}`;
     const cityPath = `${countryPath}/${encodeURIComponent(row.city)}`;
 

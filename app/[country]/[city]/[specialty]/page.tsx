@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { code, city, specialty } = resolved;
   const country = countryNameFr(code);
-  const cityName = cityLabel(city, "fr");
+  const cityName = cityLabel(city, "fr", code);
   const specialtyName = specialtyNameFr(specialty);
   return {
     title: `${specialtyName} à ${cityName}, ${country} (48h)`,
@@ -51,7 +51,7 @@ export default async function SpecialtyPage({ params }: Props) {
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
       <BackLink href={`/${code.toLowerCase()}/${encodeURIComponent(city)}`} />
       <h1 className="mt-2 mb-6 text-2xl font-semibold">
-        <SpecialtyName id={specialty} /> · <CityDisplayName city={city} />
+        <SpecialtyName id={specialty} /> · <CityDisplayName city={city} country={code} />
       </h1>
       {offers.length === 0 ? (
         <EmptyState />

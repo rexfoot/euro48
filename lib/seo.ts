@@ -40,6 +40,7 @@ const SOURCE_LABELS: Record<string, string> = {
   bundesagentur: "Bundesagentur für Arbeit",
   jobtech: "Arbetsförmedlingen",
   nav: "NAV",
+  francetravail: "France Travail",
 };
 
 // JobPosting (schema.org) structured data for one offer. Returns null when

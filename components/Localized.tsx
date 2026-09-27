@@ -13,9 +13,9 @@ export function CountryName({ code }: { code: CountryCode }) {
   return <>{country?.name[locale] ?? code}</>;
 }
 
-export function CityDisplayName({ city }: { city: string }) {
+export function CityDisplayName({ city, country }: { city: string; country: CountryCode }) {
   const { locale } = useLocale();
-  return <>{cityLabel(city, locale)}</>;
+  return <>{cityLabel(city, locale, country)}</>;
 }
 
 export function SpecialtyName({ id }: { id: SpecialtyId }) {

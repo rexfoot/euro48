@@ -33,7 +33,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
       </div>
       <h3 className="font-medium leading-snug">{titleFor(offer, locale)}</h3>
       <p className="text-sm text-muted">
-        {offer.company} · {cityLabel(offer.city, locale)} · {offer.country_code}
+        {offer.company} · {cityLabel(offer.city, locale, offer.country_code)} · {offer.country_code}
       </p>
       <p className="text-xs text-muted/70">{t(locale, "ad_language", { lang: offer.language_of_ad.toUpperCase() })}</p>
       <a

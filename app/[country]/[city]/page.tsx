@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { code, city } = resolved;
   const country = countryNameFr(code);
-  const cityName = cityLabel(city, "fr");
+  const cityName = cityLabel(city, "fr", code);
   return {
     title: `Offres d'emploi à ${cityName}, ${country} (48h)`,
     description: `Les offres d'emploi publiées ces dernières 48h à ${cityName} (${country}), classées par spécialité. Sans doublons.`,
@@ -64,7 +64,7 @@ export default async function CityPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
       <BackLink href={`/${code.toLowerCase()}`} />
-      <h1 className="mt-2 mb-1 text-2xl font-semibold"><CityDisplayName city={city} /></h1>
+      <h1 className="mt-2 mb-1 text-2xl font-semibold"><CityDisplayName city={city} country={code} /></h1>
       <p className="mb-6 text-sm text-accent-amber">+{offers.length}</p>
       {offers.length === 0 ? (
         <NearestCities country={code} cities={nearby} />
