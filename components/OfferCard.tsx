@@ -35,6 +35,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
       <p className="text-sm text-muted">
         {offer.company} · {cityLabel(offer.city, locale, offer.country_code)} · {offer.country_code}
       </p>
+      {offer.description && (
+        <p className="whitespace-pre-wrap text-sm text-foreground">{offer.description}</p>
+      )}
       <p className="text-xs text-muted/70">{t(locale, "ad_language", { lang: offer.language_of_ad.toUpperCase() })}</p>
       <a
         href={offer.url}

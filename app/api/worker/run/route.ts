@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MAX_VISIBLE_OFFERS } from "@/lib/constants";
+import { visibleCondition, purgeableCondition } from "@/lib/visibility";
 import { fetchEuresOffersForCountry, EURES_MAX_PAGE, EURES_COUNTRIES } from "@/lib/sources/eures";
 import { ADZUNA_COUNTRIES, ADZUNA_MAX_PAGE, fetchAdzunaOffersForCountry } from "@/lib/sources/adzuna";
 import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
@@ -27,12 +28,12 @@ const EURES_TIME_BUDGET_MS = 20_000;
 type CountResult = { inserted: number; skipped: number };
 
 async function purgeExpired() {
-  await query(`DELETE FROM offers WHERE published_at < now() - interval '72 hours'`);
+  await query(`DELETE FROM offers WHERE ${purgeableCondition()}`);
   await query(`
     WITH ranked AS (
       SELECT id, row_number() OVER (ORDER BY published_at DESC) AS rn
       FROM offers
-      WHERE published_at >= now() - interval '48 hours'
+      WHERE ${visibleCondition()}
     )
     DELETE FROM offers WHERE id IN (SELECT id FROM ranked WHERE rn > ${MAX_VISIBLE_OFFERS})
   `);

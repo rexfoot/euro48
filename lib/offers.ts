@@ -1,7 +1,8 @@
 import { cache } from "react";
 import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
-import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, OFFER_VISIBLE_HOURS, MAX_VISIBLE_OFFERS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
+import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, MAX_VISIBLE_OFFERS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
+import { visibleCondition } from "./visibility";
 
 export type Offer = {
   id: string;
@@ -24,6 +25,10 @@ export type Offer = {
   published_at: string;
   fingerprint: string;
   created_at: string;
+  // Both added 2026-09-28 for the admin panel's manual offers — NULL for
+  // every offer from a scraped source.
+  description: string | null;
+  expires_at: string | null;
 };
 
 export type NewOffer = {
@@ -45,6 +50,8 @@ export type NewOffer = {
   url: string;
   source: string;
   publishedAt: Date;
+  description?: string | null;
+  expiresAt?: Date | null;
 };
 
 export async function getVisibleOffers(filters: {
@@ -54,7 +61,7 @@ export async function getVisibleOffers(filters: {
   q?: string;
   limit?: number;
 } = {}): Promise<Offer[]> {
-  const conditions: string[] = [`published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`];
+  const conditions: string[] = [visibleCondition()];
   const params: unknown[] = [];
 
   if (filters.country) {
@@ -119,7 +126,7 @@ export async function getActiveLocationBreakdown(): Promise<
 > {
   return query(
     `SELECT DISTINCT country_code, city, specialty FROM offers
-     WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
+     WHERE ${visibleCondition()}`
   );
 }
 
@@ -131,7 +138,7 @@ export async function getActiveCitiesWithCoords(
   return query(
     `SELECT city, city_lat AS lat, city_lng AS lng, count(*)::int AS count
      FROM offers
-     WHERE country_code = $1 AND published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'
+     WHERE country_code = $1 AND ${visibleCondition()}
        AND city_lat IS NOT NULL AND city_lng IS NOT NULL AND city != $2
      GROUP BY city, city_lat, city_lng`,
     [country, OTHER_CITY]
@@ -140,7 +147,7 @@ export async function getActiveCitiesWithCoords(
 
 export async function countVisibleOffers(): Promise<number> {
   const rows = await query<{ count: string }>(
-    `SELECT count(*) FROM offers WHERE published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`
+    `SELECT count(*) FROM offers WHERE ${visibleCondition()}`
   );
   return Number(rows[0]?.count ?? 0);
 }
@@ -210,6 +217,8 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       fingerprint,
       offer.cityLat ?? null,
       offer.cityLng ?? null,
+      offer.description ?? null,
+      offer.expiresAt ? offer.expiresAt.toISOString() : null,
     ];
 
     try {
@@ -217,11 +226,13 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
         `INSERT INTO offers (
            id, title_original, title_en, title_fr, title_es, company,
            country_code, city, specialty, contract_type, salary_raw, remote,
-           language_of_ad, url, source, published_at, fingerprint, city_lat, city_lng
+           language_of_ad, url, source, published_at, fingerprint, city_lat, city_lng,
+           description, expires_at
          ) VALUES (
            $1::text, $2::text, $3::text, $4::text, $5::text, $6::text,
            $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean,
-           $13::text, $14::text, $15::text, $16::timestamptz, $17::text, $18::double precision, $19::double precision
+           $13::text, $14::text, $15::text, $16::timestamptz, $17::text, $18::double precision, $19::double precision,
+           $20::text, $21::timestamptz
          )
          ON CONFLICT (fingerprint) DO UPDATE SET
            title_original = EXCLUDED.title_original,
@@ -235,7 +246,9 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            salary_raw = EXCLUDED.salary_raw,
            remote = EXCLUDED.remote,
            city_lat = EXCLUDED.city_lat,
-           city_lng = EXCLUDED.city_lng
+           city_lng = EXCLUDED.city_lng,
+           description = EXCLUDED.description,
+           expires_at = EXCLUDED.expires_at
          WHERE EXCLUDED.published_at > offers.published_at
          RETURNING id`,
         values
@@ -280,7 +293,9 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            published_at = $16::timestamptz,
            fingerprint = $17::text,
            city_lat = $18::double precision,
-           city_lng = $19::double precision
+           city_lng = $19::double precision,
+           description = $20::text,
+           expires_at = $21::timestamptz
          WHERE id = $1::text AND $16::timestamptz > published_at`,
         values
       );

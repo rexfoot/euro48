@@ -84,6 +84,16 @@ CREATE INDEX IF NOT EXISTS cities_country_ascii_idx ON cities (country_code, asc
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lat DOUBLE PRECISION;
 ALTER TABLE offers ADD COLUMN IF NOT EXISTS city_lng DOUBLE PRECISION;
 
+-- Admin panel (2026-09-28): manual offers (source = 'manual') reuse this
+-- same table so they appear everywhere a normal offer does. description
+-- is NULL for every scraped offer (spec section 3 deliberately keeps those
+-- minimal) — OfferCard only renders it when present. expires_at is NULL
+-- for every offer under the normal 48h/72h rule; a manual offer can set it
+-- to extend past that (see lib/visibility.ts, applied additively so it
+-- never changes behavior for rows where it's NULL).
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE offers ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+
 -- Job alerts (2026-09-27): a subscriber picks specialties + countries and
 -- gets only matching offers, via Telegram (instant) and/or email (1-2x/day
 -- digest) — never both a chat and a support channel, just delivery + stop.

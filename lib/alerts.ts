@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { query } from "./db";
 import { MAX_VISIBLE_OFFERS, type CountryCode, type Locale, type SpecialtyId } from "./constants";
+import { visibleCondition } from "./visibility";
 import type { Offer } from "./offers";
 
 export type AlertSubscription = {
@@ -112,7 +113,7 @@ export async function getUndeliveredMatches(
 
   return query<Offer>(
     `SELECT o.* FROM offers o
-     WHERE o.published_at >= now() - interval '48 hours'
+     WHERE ${visibleCondition()}
        AND (array_length($1::text[], 1) IS NULL OR o.country_code = ANY($1))
        AND (array_length($2::text[], 1) IS NULL OR o.specialty = ANY($2))
        AND ($6::text IS NULL OR o.city = $6)
