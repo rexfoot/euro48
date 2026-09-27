@@ -8,7 +8,6 @@ import { CITIES, COUNTRIES, countryBadgeKeys, flagUrl, type CountryCode } from "
 import { LANDMARKS } from "@/lib/landmarks";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
-import { GlobeCountrySearch } from "./GlobeCountrySearch";
 import { Map2DFallback } from "./Map2DFallback";
 
 const MOBILE_BREAKPOINT = "(max-width: 767px)";
@@ -114,18 +113,6 @@ export function GlobeView({
     return () => cancelAnimationFrame(raf);
   }, [useFallback, isMobile]);
 
-  function goToCountry(code: CountryCode) {
-    const landmark = LANDMARKS.find((l) => l.country === code);
-    const controls = globeRef.current?.controls?.();
-    if (landmark && globeRef.current) {
-      if (controls) controls.autoRotate = false;
-      globeRef.current.pointOfView({ lat: landmark.lat, lng: landmark.lng, altitude: 1.6 }, 1200);
-      setTimeout(() => router.push(`/${code.toLowerCase()}`), 1300);
-    } else {
-      router.push(`/${code.toLowerCase()}`);
-    }
-  }
-
   const points: GlobePoint[] = (Object.keys(CITIES) as (keyof typeof CITIES)[])
     .filter((city) => (cityCounts[city] ?? 0) > 0)
     .map((city) => ({
@@ -155,8 +142,6 @@ export function GlobeView({
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <GlobeCountrySearch onSelect={goToCountry} />
-
       {showFlagMap ? (
         <div ref={containerRef} className="w-full">
           <Map2DFallback cityCounts={cityCounts} countryCounts={countryCounts} reduceMotion={isMobile} />

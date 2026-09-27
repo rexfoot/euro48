@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { Offer } from "@/lib/offers";
 import { OfferCard } from "./OfferCard";
 import { useLocale } from "./LocaleProvider";
@@ -9,6 +8,8 @@ import { t } from "@/lib/i18n";
 // Mobile home only (spec 2026-09-27, block C, section 5): a plain
 // scrollable list of recent offers, in addition to the ticker at the top
 // (also on mobile since 2026-09-27, slowed down to stay tappable there).
+// The trailing "Recevoir les alertes" link was removed 2026-09-27 — the
+// orange CTA up in HomeSearch is the only one now.
 export function RecentOffersSection({ offers }: { offers: Offer[] }) {
   const { locale } = useLocale();
 
@@ -20,12 +21,6 @@ export function RecentOffersSection({ offers }: { offers: Offer[] }) {
           <OfferCard key={offer.id} offer={offer} />
         ))}
       </div>
-      <Link
-        href="/alerts"
-        className="mt-4 flex items-center justify-center gap-1.5 rounded-full border border-border bg-panel px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-accent-amber/50"
-      >
-        {t(locale, "see_all_alerts")}
-      </Link>
     </section>
   );
 }
