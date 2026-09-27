@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CITIES, COUNTRIES, countryBadgeKeys, flagUrl, type CountryCode } from "@/lib/constants";
-import { project } from "@/lib/geo";
+import { projectPoint, mapCountries, MAP_WIDTH, MAP_HEIGHT } from "@/lib/europe-geo";
 import { LANDMARKS } from "@/lib/landmarks";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
-const WIDTH = 600;
-const HEIGHT = 520;
+const SEA = "#0a1622";
+const LAND = "#1a2636";
+const LAND_BORDER = "#33465f";
+const PIN_RADIUS = 17; // large, tappable flag pins (spec 2026-09-27: "grandes y claras")
 
 export function Map2DFallback({
   cityCounts,
@@ -29,21 +31,34 @@ export function Map2DFallback({
 
   return (
     <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+      viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
       className="mx-auto h-full max-h-[420px] w-full max-w-xl"
       role="img"
       aria-label="Europe map"
     >
-      <rect width={WIDTH} height={HEIGHT} fill="var(--panel)" rx={12} />
-      {Array.from({ length: 12 }).map((_, i) => (
-        <line key={`v${i}`} x1={(i * WIDTH) / 12} y1={0} x2={(i * WIDTH) / 12} y2={HEIGHT} stroke="var(--border)" strokeWidth={0.5} />
-      ))}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <line key={`h${i}`} x1={0} y1={(i * HEIGHT) / 10} x2={WIDTH} y2={(i * HEIGHT) / 10} stroke="var(--border)" strokeWidth={0.5} />
-      ))}
+      <defs>
+        <clipPath id="map-rounded-clip">
+          <rect width={MAP_WIDTH} height={MAP_HEIGHT} rx={12} />
+        </clipPath>
+        <radialGradient id="landmark-badge-fill" cx="32%" cy="28%">
+          <stop offset="0%" stopColor="#1c2536" />
+          <stop offset="100%" stopColor="#0a0e17" />
+        </radialGradient>
+        <clipPath id="pin-flag-clip">
+          <circle r={PIN_RADIUS - 2} />
+        </clipPath>
+      </defs>
+
+      <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill={SEA} rx={12} />
+      <g clipPath="url(#map-rounded-clip)">
+        {mapCountries.map((c, i) => (
+          <path key={i} d={c.path} fill={LAND} stroke={LAND_BORDER} strokeWidth={0.75} strokeLinejoin="round" />
+        ))}
+      </g>
+
       {(Object.keys(CITIES) as (keyof typeof CITIES)[]).map((city) => {
         const { lat, lng, country } = CITIES[city];
-        const { x, y } = project(lat, lng, WIDTH, HEIGHT);
+        const [x, y] = projectPoint(lng, lat);
         const count = cityCounts[city] ?? 0;
         const r = count > 0 ? 3 + Math.min(8, (count / maxCount) * 8) : 1.5;
         return (
@@ -65,16 +80,17 @@ export function Map2DFallback({
       })}
 
       {LANDMARKS.map((l) => {
-        const { x, y } = project(l.lat, l.lng, WIDTH, HEIGHT);
+        const [x, y] = projectPoint(l.lng, l.lat);
         const name = COUNTRIES.find((c) => c.code === l.country)?.name[locale] ?? l.country;
         const count = countryCounts[l.country] ?? 0;
         const hasOffers = count > 0;
         const badgeLabel = countryBadgeKeys(l.country).map((k) => t(locale, k)).join(" · ");
         const isHovered = hovered === l.country;
+
         return (
           <g
             key={l.country}
-            transform={`translate(${x}, ${y}) scale(${isHovered ? 1.25 : 1})`}
+            transform={`translate(${x}, ${y}) scale(${isHovered ? 1.12 : 1})`}
             className="cursor-pointer"
             opacity={hasOffers ? 1 : 0.45}
             onMouseEnter={() => setHovered(l.country)}
@@ -82,52 +98,52 @@ export function Map2DFallback({
             onClick={() => router.push(`/${l.country.toLowerCase()}`)}
           >
             <circle
-              r={10}
+              r={PIN_RADIUS}
               fill="url(#landmark-badge-fill)"
-              stroke={isHovered && hasOffers ? "#F5C15A" : hasOffers ? "rgba(245,193,90,0.55)" : "rgba(148,163,184,0.35)"}
-              strokeWidth={1.5}
+              stroke={isHovered && hasOffers ? "#F5C15A" : hasOffers ? "rgba(245,193,90,0.6)" : "rgba(148,163,184,0.35)"}
+              strokeWidth={2}
             />
             <image
               href={flagUrl(l.country)}
-              x={-9}
-              y={-9}
-              width={18}
-              height={18}
+              x={-PIN_RADIUS + 2}
+              y={-PIN_RADIUS + 2}
+              width={(PIN_RADIUS - 2) * 2}
+              height={(PIN_RADIUS - 2) * 2}
               clipPath="url(#pin-flag-clip)"
               preserveAspectRatio="xMidYMid slice"
               style={hasOffers ? undefined : { filter: "grayscale(0.6)" }}
             />
-            <text textAnchor="middle" y={22} fontSize={9} fontWeight={600} fill={hasOffers ? "#F5C15A" : "#94a3b8"}>
+            <text
+              textAnchor="middle"
+              y={PIN_RADIUS + 13}
+              fontSize={12}
+              fontWeight={700}
+              fill={hasOffers ? "#F5C15A" : "#94a3b8"}
+              stroke={SEA}
+              strokeWidth={3}
+              paintOrder="stroke"
+            >
               {hasOffers ? `+${count}` : "—"}
             </text>
             {isHovered && (
-              <g transform="translate(0,-16)">
+              <g transform="translate(0,-24)">
                 <text
                   textAnchor="middle"
                   y={-6}
                   fill="var(--foreground)"
-                  fontSize={11}
-                  stroke="var(--panel)"
+                  fontSize={12}
+                  stroke={SEA}
                   strokeWidth={3}
                   paintOrder="stroke"
                 >
-                  {name}{badgeLabel ? ` · ${badgeLabel}` : ""}
+                  {name}
+                  {badgeLabel ? ` · ${badgeLabel}` : ""}
                 </text>
               </g>
             )}
           </g>
         );
       })}
-
-      <defs>
-        <radialGradient id="landmark-badge-fill" cx="32%" cy="28%">
-          <stop offset="0%" stopColor="#1c2536" />
-          <stop offset="100%" stopColor="#0a0e17" />
-        </radialGradient>
-        <clipPath id="pin-flag-clip">
-          <circle r={9} />
-        </clipPath>
-      </defs>
     </svg>
   );
 }
