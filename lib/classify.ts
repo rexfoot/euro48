@@ -32,6 +32,14 @@ const COUNTRY_NAME_ALIASES: Record<string, CountryCode> = {
   sweden: "SE", suede: "SE", suecia: "SE", sverige: "SE",
   finland: "FI", finlande: "FI", finlandia: "FI", suomi: "FI",
   iceland: "IS", islande: "IS", islandia: "IS", island: "IS",
+  // Added 2026-09-28 with PT/PL/GB — found live: a Polish job-center
+  // posting with no real city in its location data was resolving to a
+  // "city" literally named "Polska" (Polish for "Poland"), since that
+  // wasn't yet in this list of names to reject as "a country, not a city".
+  portugal: "PT", portugalia: "PT",
+  poland: "PL", pologne: "PL", polonia: "PL", polska: "PL",
+  "united kingdom": "GB", "royaume uni": "GB", "reino unido": "GB",
+  "great britain": "GB", "grande bretagne": "GB", "gran bretana": "GB", uk: "GB",
 };
 
 // A source that states its country as plain text (e.g. Greenhouse's
