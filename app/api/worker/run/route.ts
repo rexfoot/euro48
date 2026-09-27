@@ -6,6 +6,7 @@ import { fetchArbeitnowOffers } from "@/lib/sources/arbeitnow";
 import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
 import { fetchJobTechOffers } from "@/lib/sources/jobtech";
 import { fetchNavOffers } from "@/lib/sources/nav";
+import { fetchFranceTravailOffers } from "@/lib/sources/francetravail";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -140,6 +141,12 @@ async function runNav() {
   return { nav: result };
 }
 
+async function runFranceTravail() {
+  const offers = await fetchFranceTravailOffers();
+  const result = await upsertOffers(offers);
+  return { francetravail: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, CountResult>>> = {
   eures: runEures,
   adzuna: runAdzuna,
@@ -147,6 +154,7 @@ const SOURCES: Record<string, (country?: string) => Promise<Record<string, Count
   bundesagentur: runBundesagentur,
   jobtech: runJobTech,
   nav: runNav,
+  francetravail: runFranceTravail,
 };
 
 export async function POST(req: NextRequest) {

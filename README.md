@@ -30,8 +30,8 @@ doublons.
 - **Purge horaire** : `db/purge.sql` — hard delete >72h, cap 2000 offres visibles
 - **Worker** : déclenché toutes les 10-15 min via **GitHub Actions cron**
   (pas le cron natif Vercel, limité à 1x/jour sur le plan Hobby)
-- **Sources** : EURES (API publique), Adzuna (API gratuite avec inscription),
-  puis France Travail / Arbeitsagentur / ATS publics plus tard
+- **Sources** : EURES, Adzuna, Arbeitnow, Bundesagentur für Arbeit (DE),
+  JobTech (SE), NAV (NO), France Travail (FR) — voir `lib/sources/`
 
 ## Variables d'environnement
 
@@ -40,6 +40,7 @@ Voir `.env.example`. Ne jamais commiter de secrets.
 - `DATABASE_URL` — connexion Postgres
 - `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` — https://developer.adzuna.com/
 - `WORKER_SECRET` — secret partagé entre GitHub Actions et `/api/worker/run`
+- `FRANCE_TRAVAIL_CLIENT_ID` / `FRANCE_TRAVAIL_CLIENT_SECRET` — https://francetravail.io/
 
 ## Structure
 
@@ -55,8 +56,7 @@ db/purge.sql            purge horaire (>72h delete, cap 2000)
 
 ## État actuel
 
-Phase 0 (scaffold + design system + schema DB) en cours. Voir le worker,
-le globe 3D et l'i18n dans les phases suivantes.
+En production : 7 sources, globe 3D, i18n (fr/es/en), alertes, SEO.
 
 ## Développement local
 

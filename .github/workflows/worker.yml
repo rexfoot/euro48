@@ -9,14 +9,32 @@ jobs:
   run-worker:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger worker endpoint
+      - name: Trigger worker sources
         run: |
-          status=$(curl -s -o response.json -w "%{http_code}" -X POST \
-            "https://euro48.com/api/worker/run" \
-            -H "Authorization: Bearer ${{ secrets.WORKER_SECRET }}")
-          echo "HTTP status: $status"
-          cat response.json
-          if [ "$status" -ne 200 ]; then
-            echo "Worker call failed"
+          set +e
+          FAILED=""
+          # All keyless/free sources every run (every 12 min). Adzuna has a
+          # hard 2500/month free-tier cap (see lib/sources/adzuna.ts), so it
+          # only runs once per hour (top-of-hour) to stay near the intended
+          # ~1440 calls/month.
+          SOURCES="eures arbeitnow bundesagentur jobtech nav francetravail"
+          if [ "$(date -u +%M)" = "00" ]; then
+            SOURCES="$SOURCES adzuna"
+          fi
+
+          for source in $SOURCES; do
+            status=$(curl -s -o response.json -w "%{http_code}" -X POST \
+              "https://euro48.com/api/worker/run?source=$source" \
+              -H "Authorization: Bearer ${{ secrets.WORKER_SECRET }}")
+            echo "== $source: HTTP $status =="
+            cat response.json
+            echo
+            if [ "$status" -ne 200 ]; then
+              FAILED="$FAILED $source"
+            fi
+          done
+
+          if [ -n "$FAILED" ]; then
+            echo "Worker call(s) failed:$FAILED"
             exit 1
           fi
