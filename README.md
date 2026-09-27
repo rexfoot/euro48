@@ -31,7 +31,7 @@ doublons.
 - **Worker** : déclenché toutes les 10-15 min via **GitHub Actions cron**
   (pas le cron natif Vercel, limité à 1x/jour sur le plan Hobby)
 - **Sources** : EURES, Adzuna, Arbeitnow, Bundesagentur für Arbeit (DE),
-  JobTech (SE), NAV (NO), France Travail (FR) — voir `lib/sources/`
+  JobTech (SE), NAV (NO), France Travail (FR), Le Forem (BE) — voir `lib/sources/`
 
 ## Variables d'environnement
 

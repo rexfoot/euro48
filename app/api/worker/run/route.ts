@@ -7,6 +7,7 @@ import { fetchBundesagenturOffers } from "@/lib/sources/bundesagentur";
 import { fetchJobTechOffers } from "@/lib/sources/jobtech";
 import { fetchNavOffers } from "@/lib/sources/nav";
 import { fetchFranceTravailOffers } from "@/lib/sources/francetravail";
+import { fetchLeforemOffers } from "@/lib/sources/leforem";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -147,6 +148,12 @@ async function runFranceTravail() {
   return { francetravail: result };
 }
 
+async function runLeforem() {
+  const offers = await fetchLeforemOffers();
+  const result = await upsertOffers(offers);
+  return { leforem: result };
+}
+
 const SOURCES: Record<string, (country?: string) => Promise<Record<string, CountResult>>> = {
   eures: runEures,
   adzuna: runAdzuna,
@@ -155,6 +162,7 @@ const SOURCES: Record<string, (country?: string) => Promise<Record<string, Count
   jobtech: runJobTech,
   nav: runNav,
   francetravail: runFranceTravail,
+  leforem: runLeforem,
 };
 
 export async function POST(req: NextRequest) {
