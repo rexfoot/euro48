@@ -1,5 +1,5 @@
-import { LANGUAGE_BY_COUNTRY, OFFER_VISIBLE_HOURS } from "../constants";
-import { resolveCityWithCountry, matchSpecialty } from "../classify";
+import { LANGUAGE_BY_COUNTRY, OFFER_VISIBLE_HOURS, type CountryCode } from "../constants";
+import { resolveCity, resolveCityWithCountry, matchSpecialty, countryFromName } from "../classify";
 import { getCityIndex, type CityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
@@ -9,8 +9,8 @@ const BOARD_CONCURRENCY = 5;
 
 // Board tokens verified live (HTTP 200) against boards-api.greenhouse.io.
 // Most of these are US-heavy companies — postings outside our 15 countries
-// are dropped naturally by resolveCityWithCountry below, same as every
-// other source. Confirmed-404 tokens (spotify, revolut, klarna, personio,
+// are dropped by the country gate in build() below, same as every other
+// source. Confirmed-404 tokens (spotify, revolut, klarna, personio,
 // snyk, doordash, notion, canva, miro, zapier, retool, linear, openai) are
 // deliberately excluded.
 const BOARD_TOKENS = [
@@ -26,6 +26,7 @@ type GreenhouseJob = {
   title: string;
   absolute_url: string;
   location?: { name?: string };
+  offices?: { location?: string | null }[];
   company_name?: string;
   first_published?: string; // ISO date, the true original post date
   updated_at?: string;
@@ -48,13 +49,37 @@ async function fetchBoard(token: string): Promise<GreenhouseJob[]> {
   }
 }
 
+// Greenhouse's offices[].location ("City, Region, Country") states the
+// country in plain English — far more reliable than fuzzy-matching the
+// headline location.name text, which caused real bugs: e.g. an Anthropic
+// posting for "San Francisco, CA" was getting matched to a Spanish island
+// town whose GeoNames alternate name also happens to read "San Francisco".
+// When an office location is present, its stated country is authoritative:
+// reject outright if it's not one of our 15, never fall through to text
+// matching for those. Only jobs with no office location at all (seen on
+// some boards, e.g. Doctolib) fall back to the old cross-country text
+// search over location.name.
 function build(job: GreenhouseJob, token: string, cityIndex: CityIndex): NewOffer | null {
+  const officeLocation = job.offices?.[0]?.location;
   const locationName = job.location?.name;
-  if (!locationName) return null;
-  const parts = locationName.split(",").map((p) => p.trim()).filter(Boolean);
-  const match = resolveCityWithCountry(cityIndex, parts);
-  if (!match) return null;
-  const { city, country, lat, lng } = match;
+
+  let city: string, country: CountryCode, lat: number | null, lng: number | null;
+  if (officeLocation) {
+    const parts = officeLocation.split(",").map((p) => p.trim()).filter(Boolean);
+    const stated = parts.length > 0 ? countryFromName(parts[parts.length - 1]) : null;
+    if (!stated) return null; // stated country isn't one of our 15 (or unparseable) — reject, don't guess
+    country = stated;
+    const resolved = resolveCity(cityIndex, parts, country);
+    city = resolved.city;
+    lat = resolved.lat;
+    lng = resolved.lng;
+  } else {
+    if (!locationName) return null;
+    const parts = locationName.split(",").map((p) => p.trim()).filter(Boolean);
+    const match = resolveCityWithCountry(cityIndex, parts);
+    if (!match) return null;
+    ({ city, country, lat, lng } = match);
+  }
 
   const specialty = matchSpecialty(job.title);
 
@@ -72,7 +97,7 @@ function build(job: GreenhouseJob, token: string, cityIndex: CityIndex): NewOffe
     specialty,
     contractType: null,
     salaryRaw: null,
-    remote: /remote/i.test(locationName),
+    remote: /remote/i.test(officeLocation ?? locationName ?? ""),
     languageOfAd: LANGUAGE_BY_COUNTRY[country] ?? "en",
     url: job.absolute_url,
     source: "greenhouse",

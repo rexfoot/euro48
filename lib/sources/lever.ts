@@ -1,5 +1,5 @@
-import { LANGUAGE_BY_COUNTRY, OFFER_VISIBLE_HOURS } from "../constants";
-import { resolveCityWithCountry, matchSpecialty } from "../classify";
+import { COUNTRY_CODES, LANGUAGE_BY_COUNTRY, OFFER_VISIBLE_HOURS, type CountryCode } from "../constants";
+import { resolveCity, resolveCityWithCountry, matchSpecialty } from "../classify";
 import { getCityIndex, type CityIndex } from "../city-index";
 import { mapWithConcurrency } from "../concurrency";
 import type { NewOffer } from "../offers";
@@ -51,13 +51,32 @@ async function fetchBoard(company: string): Promise<LeverPosting[]> {
   }
 }
 
+// Lever gives an explicit ISO-2 `country` on most postings — far more
+// reliable than fuzzy-matching the free-text location (which caused real
+// bugs: e.g. a Spotify posting for "Los Angeles, CA" with country "US" was
+// getting matched to a Spanish town whose GeoNames alternate name happens
+// to also read "Los Angeles"). When `country` is present it's authoritative:
+// reject outright if it's not one of our 15, never fall through to text
+// matching for those. Only postings missing `country` fall back to the
+// old cross-country text search.
 function build(posting: LeverPosting, company: string, cityIndex: CityIndex): NewOffer | null {
   const locationName = posting.categories?.location;
   if (!locationName) return null;
   const parts = locationName.split(",").map((p) => p.trim()).filter(Boolean);
-  const match = resolveCityWithCountry(cityIndex, parts);
-  if (!match) return null;
-  const { city, country, lat, lng } = match;
+
+  let city: string, country: CountryCode, lat: number | null, lng: number | null;
+  if (posting.country) {
+    if (!COUNTRY_CODES.includes(posting.country as CountryCode)) return null;
+    country = posting.country as CountryCode;
+    const resolved = resolveCity(cityIndex, parts, country);
+    city = resolved.city;
+    lat = resolved.lat;
+    lng = resolved.lng;
+  } else {
+    const match = resolveCityWithCountry(cityIndex, parts);
+    if (!match) return null;
+    ({ city, country, lat, lng } = match);
+  }
 
   const specialty = matchSpecialty(posting.text);
 

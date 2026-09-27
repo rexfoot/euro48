@@ -34,6 +34,15 @@ const COUNTRY_NAME_ALIASES: Record<string, CountryCode> = {
   iceland: "IS", islande: "IS", islandia: "IS", island: "IS",
 };
 
+// A source that states its country as plain text (e.g. Greenhouse's
+// offices[].location, "City, Region, Country") can be resolved directly
+// against the same alias table, without going through a city match at
+// all — used as an authoritative allow/reject gate ahead of fuzzy city
+// text matching (see lib/sources/greenhouse.ts).
+export function countryFromName(piece: string): CountryCode | null {
+  return COUNTRY_NAME_ALIASES[normalizeForFingerprint(piece)] ?? null;
+}
+
 // Words that mean this piece is a company/street/postcode fragment, not a
 // city — only relevant for sources that occasionally hand us a raw
 // multi-line address block instead of a clean city field (seen from EURES
