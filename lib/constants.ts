@@ -192,6 +192,68 @@ export function countryBadgeKeys(code: CountryCode): string[] {
   return keys;
 }
 
+// One soft, elegant accent color per métier — distinct hues, all readable
+// as text/borders on the dark navy background (spec 2026-09-27, home
+// search's job-category chips).
+export const SPECIALTY_COLORS: Record<SpecialtyId, string> = {
+  hospitality: "#f0a8c4",
+  logistics: "#f5b876",
+  healthcare: "#f2828a",
+  construction: "#f0cf6b",
+  retail: "#9fd88f",
+  industry: "#8fb8d8",
+  transport: "#7ecbd6",
+  it: "#b79ce8",
+  other: "#b8bfcc",
+};
+
+// Each country's flag colors, softened for a dark background — 2-3 hex
+// values in the flag's own stripe order (spec 2026-09-27: country cards +
+// the country dropdown get a subtle flag-color accent).
+export const COUNTRY_FLAG_COLORS: Record<CountryCode, string[]> = {
+  DE: ["#2b2620", "#e2434a", "#f0c14b"],
+  NL: ["#d6394a", "#eceef0", "#2f5fa8"],
+  CH: ["#e0393f", "#f0f0f0"],
+  LU: ["#ef4a52", "#eceef0", "#4fb8e8"],
+  BE: ["#2b2620", "#f0cd3a", "#e2434a"],
+  AT: ["#e2434a", "#eceef0"],
+  IE: ["#37a06a", "#eceef0", "#f4914a"],
+  FR: ["#3d6fc4", "#eceef0", "#e2434a"],
+  ES: ["#cc3333", "#f0c23a"],
+  IT: ["#3da068", "#eceef0", "#d3444a"],
+  NO: ["#e2434a", "#eceef0", "#2f4f9e"],
+  DK: ["#d6394a", "#eceef0"],
+  SE: ["#2f6fa8", "#f0c23a"],
+  FI: ["#eceef0", "#3d6fc4"],
+  IS: ["#2f5fa8", "#eceef0", "#d6394a"],
+};
+
+export function flagGradient(code: CountryCode): string {
+  return `linear-gradient(90deg, ${COUNTRY_FLAG_COLORS[code].join(", ")})`;
+}
+
+// One vibrant, representative color per flag — hand-picked rather than
+// derived positionally from COUNTRY_FLAG_COLORS, since several flags lead
+// or end with black/white (too faint as a border accent on a dark panel;
+// e.g. Germany/Belgium's black, Switzerland/Austria/Denmark's white).
+export const COUNTRY_ACCENT_COLOR: Record<CountryCode, string> = {
+  DE: "#f0c14b",
+  NL: "#d6394a",
+  CH: "#e0393f",
+  LU: "#4fb8e8",
+  BE: "#f0cd3a",
+  AT: "#e2434a",
+  IE: "#37a06a",
+  FR: "#3d6fc4",
+  ES: "#cc3333",
+  IT: "#3da068",
+  NO: "#2f4f9e",
+  DK: "#d6394a",
+  SE: "#2f6fa8",
+  FI: "#3d6fc4",
+  IS: "#d6394a",
+};
+
 export const URGENT_KEYWORDS = [
   "immédiat", "immediat", "asap", "ab sofort", "pourvue rapidement",
   "urgente", "immediato", "urgent", "dringend", "spoedig",

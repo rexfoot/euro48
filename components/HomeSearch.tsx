@@ -3,9 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { COUNTRIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "@/lib/constants";
+import { COUNTRIES, SPECIALTIES, SPECIALTY_COLORS, COUNTRY_ACCENT_COLOR, type CountryCode, type SpecialtyId } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
+
+// <option> elements render on the OS's own (usually light) native list, not
+// the page's dark theme, and most browsers ignore alpha there — so this
+// mixes each flag color down to a pale, opaque tint with dark text, instead
+// of the translucent-on-dark look used elsewhere (spec 2026-09-27: "if
+// possible" on the native country dropdown).
+function paleTint(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (channel: number) => Math.round(channel + (255 - channel) * 0.82);
+  const r = mix((n >> 16) & 255);
+  const g = mix((n >> 8) & 255);
+  const b = mix(n & 255);
+  return `rgb(${r}, ${g}, ${b})`;
+}
 
 // Home page only (spec 2026-09-27): a big "Recevoir les alertes" CTA +
 // country + submit (sticky on scroll), then a separate job-keyword box
@@ -60,7 +74,11 @@ export function HomeSearch() {
         >
           <option value="">{t(locale, "all_countries")}</option>
           {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>
+            <option
+              key={c.code}
+              value={c.code}
+              style={{ backgroundColor: paleTint(COUNTRY_ACCENT_COLOR[c.code]), color: "#14171f" }}
+            >
               {c.name[locale]}
             </option>
           ))}
@@ -86,16 +104,20 @@ export function HomeSearch() {
         {showSpecialties && q.trim() === "" && (
           <div className="absolute z-20 mt-2 w-full rounded-xl border border-accent-blue/40 bg-panel p-2 shadow-lg">
             <div className="flex flex-wrap gap-2">
-              {SPECIALTIES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onMouseDown={() => pickSpecialty(s.id, s.name[locale])}
-                  className="rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-accent-blue hover:text-accent-blue"
-                >
-                  {s.name[locale]}
-                </button>
-              ))}
+              {SPECIALTIES.map((s) => {
+                const color = SPECIALTY_COLORS[s.id];
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onMouseDown={() => pickSpecialty(s.id, s.name[locale])}
+                    style={{ borderColor: `${color}66`, backgroundColor: `${color}1a`, color }}
+                    className="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors hover:brightness-125"
+                  >
+                    {s.name[locale]}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

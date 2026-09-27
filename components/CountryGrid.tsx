@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { COUNTRIES, countryBadgeKeys, type CountryCode } from "@/lib/constants";
+import { COUNTRIES, countryBadgeKeys, COUNTRY_ACCENT_COLOR, flagGradient, type CountryCode } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
@@ -13,13 +13,20 @@ export function CountryGrid({ counts }: { counts: Record<CountryCode, number> })
       {COUNTRIES.map((country) => {
         const count = counts[country.code] ?? 0;
         const badges = countryBadgeKeys(country.code).map((k) => t(locale, k));
+        const flagColor = COUNTRY_ACCENT_COLOR[country.code];
 
         return (
           <Link
             key={country.code}
             href={`/${country.code.toLowerCase()}`}
-            className={`flex flex-col gap-1 rounded-xl border border-border bg-panel p-3 transition-colors hover:border-accent-amber/50 ${count === 0 ? "opacity-50" : ""}`}
+            style={{ borderColor: `${flagColor}59` }}
+            className={`relative flex flex-col gap-1 overflow-hidden rounded-xl border bg-panel p-3 pt-4 transition-colors hover:brightness-110 ${count === 0 ? "opacity-50" : ""}`}
           >
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-1"
+              style={{ background: flagGradient(country.code) }}
+            />
             <img
               src={`https://flagcdn.com/24x18/${country.code.toLowerCase()}.png`}
               alt={country.name[locale]}
