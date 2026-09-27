@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { InstallAppBanner } from "@/components/InstallAppBanner";
 import { SITE_URL } from "@/lib/constants";
 import { pageAlternates } from "@/lib/seo";
 
@@ -25,6 +26,18 @@ export const metadata: Metadata = {
   },
   description: "Les offres d'emploi d'Europe des 48 dernières heures, dans 15 pays. Sans doublons.",
   alternates: pageAlternates("/"),
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Euro48",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#070b14",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -38,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Header />
           <div className="flex flex-1 flex-col">{children}</div>
           <Footer />
+          <InstallAppBanner />
         </LocaleProvider>
       </body>
     </html>

@@ -57,6 +57,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     unsubscribe_title: "Désabonnement",
     unsubscribe_done: "Tu ne recevras plus d'alertes.",
     unsubscribe_invalid: "Lien invalide ou déjà utilisé.",
+    install_title: "Installer Euro48",
+    install_desc: "Accès plus rapide, comme une vraie app.",
+    install_button: "Installer",
+    install_dismiss: "Plus tard",
+    install_ios_hint: "Appuie sur Partager, puis « Sur l'écran d'accueil ».",
   },
   es: {
     counter_prefix: "+",
@@ -108,6 +113,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     unsubscribe_title: "Baja de alertas",
     unsubscribe_done: "Ya no recibirás más alertas.",
     unsubscribe_invalid: "Enlace no válido o ya usado.",
+    install_title: "Instalar Euro48",
+    install_desc: "Acceso más rápido, como una app de verdad.",
+    install_button: "Instalar",
+    install_dismiss: "Ahora no",
+    install_ios_hint: "Toca Compartir y luego «Añadir a pantalla de inicio».",
   },
   en: {
     counter_prefix: "+",
@@ -159,6 +169,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     unsubscribe_title: "Unsubscribe",
     unsubscribe_done: "You won't get any more alerts.",
     unsubscribe_invalid: "Invalid or already-used link.",
+    install_title: "Install Euro48",
+    install_desc: "Faster access, like a real app.",
+    install_button: "Install",
+    install_dismiss: "Not now",
+    install_ios_hint: "Tap Share, then \"Add to Home Screen\".",
   },
 };
 
