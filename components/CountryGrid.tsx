@@ -7,10 +7,13 @@ import { t } from "@/lib/i18n";
 
 export function CountryGrid({ counts }: { counts: Record<CountryCode, number> }) {
   const { locale } = useLocale();
+  // Most offers first; 0-offer countries always sink to the end since a
+  // count can never be negative (spec 2026-09-28).
+  const sortedCountries = [...COUNTRIES].sort((a, b) => (counts[b.code] ?? 0) - (counts[a.code] ?? 0));
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-      {COUNTRIES.map((country) => {
+      {sortedCountries.map((country) => {
         const count = counts[country.code] ?? 0;
         const badges = countryBadgeKeys(country.code).map((k) => t(locale, k));
         const flagColor = COUNTRY_ACCENT_COLOR[country.code];
