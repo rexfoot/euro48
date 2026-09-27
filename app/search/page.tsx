@@ -8,7 +8,7 @@ import { pageAlternates } from "@/lib/seo";
 
 export const revalidate = 0;
 
-type Props = { searchParams: Promise<{ q?: string; country?: string; specialty?: string }> };
+type Props = { searchParams: Promise<{ q?: string; country?: string; specialty?: string; city?: string }> };
 
 // Arbitrary query params, no evergreen content of its own — never indexed,
 // never in the sitemap (spec 2026-09-27, block B).
@@ -31,24 +31,30 @@ function resolveSpecialty(specialty?: string): SpecialtyId | undefined {
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const { q: rawQ, country: rawCountry, specialty: rawSpecialty } = await searchParams;
+  const { q: rawQ, country: rawCountry, specialty: rawSpecialty, city: rawCity } = await searchParams;
   const q = (rawQ ?? "").trim();
   const country = resolveCountry(rawCountry);
   const specialty = resolveSpecialty(rawSpecialty);
+  const city = (rawCity ?? "").trim();
 
-  const offers =
-    q || country || specialty
-      ? await getVisibleOffers({ q: q || undefined, country, specialty, limit: 200 })
-      : [];
+  // "Search Jobs" always shows what matches right now, last-48h, even with
+  // every field left blank (spec 2026-09-27) — capped at 200 either way.
+  const offers = await getVisibleOffers({
+    q: q || undefined,
+    country,
+    specialty,
+    cityQuery: city || undefined,
+    limit: 200,
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
       <BackLink href="/" />
       <h1 className="sr-only">{q ? `${q} — Euro48` : "Recherche — Euro48"}</h1>
       <div className="mt-4">
-        <SearchBar defaultQuery={q} defaultCountry={country} />
+        <SearchBar defaultQuery={q} defaultCountry={country} defaultCity={city} />
       </div>
-      <SearchResults offers={offers} query={q} specialty={specialty} />
+      <SearchResults offers={offers} query={q} specialty={specialty} country={country} city={city || undefined} />
     </main>
   );
 }

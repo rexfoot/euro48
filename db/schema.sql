@@ -114,3 +114,11 @@ CREATE TABLE IF NOT EXISTS alert_deliveries (
   sent_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (subscription_id, offer_id, channel)
 );
+
+-- Job/city refinement for an alert created straight from a search
+-- (2026-09-27) — both optional, NULL means "no restriction on this
+-- dimension". Existing specialty+country-only subscriptions from the
+-- standalone /alerts page are unaffected: they just have NULL here and
+-- keep matching exactly as before.
+ALTER TABLE alert_subscriptions ADD COLUMN IF NOT EXISTS keyword TEXT;
+ALTER TABLE alert_subscriptions ADD COLUMN IF NOT EXISTS city TEXT;

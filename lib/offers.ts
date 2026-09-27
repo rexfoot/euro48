@@ -50,6 +50,11 @@ export type NewOffer = {
 export async function getVisibleOffers(filters: {
   country?: CountryCode;
   city?: string;
+  // Free-text city match for the search page (spec 2026-09-27) — case-
+  // insensitive substring, unlike `city` above (an exact match used by the
+  // country/city browse pages, which always pass the DB's own stored
+  // value). Ignored if `city` is also set.
+  cityQuery?: string;
   specialty?: SpecialtyId;
   q?: string;
   limit?: number;
@@ -64,6 +69,9 @@ export async function getVisibleOffers(filters: {
   if (filters.city) {
     params.push(filters.city);
     conditions.push(`city = $${params.length}`);
+  } else if (filters.cityQuery) {
+    params.push(`%${filters.cityQuery.replace(/[%_]/g, "\\$&")}%`);
+    conditions.push(`city ILIKE $${params.length} ESCAPE '\\'`);
   }
   if (filters.specialty) {
     params.push(filters.specialty);

@@ -1,9 +1,9 @@
 "use client";
 
 import type { Offer } from "@/lib/offers";
-import { SPECIALTIES, type SpecialtyId } from "@/lib/constants";
+import { SPECIALTIES, type CountryCode, type SpecialtyId } from "@/lib/constants";
 import { OfferCard } from "./OfferCard";
-import { EmptyState } from "./EmptyState";
+import { InlineAlertSignup } from "./InlineAlertSignup";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
@@ -11,10 +11,14 @@ export function SearchResults({
   offers,
   query,
   specialty,
+  country,
+  city,
 }: {
   offers: Offer[];
   query: string;
   specialty?: SpecialtyId;
+  country?: CountryCode;
+  city?: string;
 }) {
   const { locale } = useLocale();
   const specialtyName = specialty ? SPECIALTIES.find((s) => s.id === specialty)?.name[locale] : undefined;
@@ -26,7 +30,7 @@ export function SearchResults({
         {label ? t(locale, "search_results_for", { q: label, n: offers.length }) : t(locale, "search_results_count", { n: offers.length })}
       </p>
       {offers.length === 0 ? (
-        <EmptyState />
+        <InlineAlertSignup query={query} specialty={specialty} country={country} city={city} />
       ) : (
         <div className="flex flex-col gap-3">
           {offers.map((offer) => (

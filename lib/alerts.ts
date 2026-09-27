@@ -10,6 +10,11 @@ export type AlertSubscription = {
   telegram_link_token: string | null;
   specialties: SpecialtyId[];
   countries: CountryCode[];
+  // Set when this subscription came from a search (job keyword + optional
+  // city, 2026-09-27) rather than the standalone /alerts picker — NULL for
+  // every older/plain subscription, meaning "no restriction there".
+  keyword: string | null;
+  city: string | null;
   channel_email: boolean;
   channel_telegram: boolean;
   active: boolean;
@@ -22,6 +27,8 @@ export async function createSubscription(params: {
   wantsTelegram: boolean;
   specialties: SpecialtyId[];
   countries: CountryCode[];
+  keyword?: string | null;
+  city?: string | null;
   locale: Locale;
 }): Promise<AlertSubscription> {
   const id = randomUUID();
@@ -29,8 +36,8 @@ export async function createSubscription(params: {
 
   const rows = await query<AlertSubscription>(
     `INSERT INTO alert_subscriptions
-       (id, email, telegram_link_token, specialties, countries, channel_email, channel_telegram, locale)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       (id, email, telegram_link_token, specialties, countries, keyword, city, channel_email, channel_telegram, locale)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      RETURNING *`,
     [
       id,
@@ -38,6 +45,8 @@ export async function createSubscription(params: {
       telegramLinkToken,
       params.specialties,
       params.countries,
+      params.keyword?.trim() || null,
+      params.city?.trim() || null,
       Boolean(params.email),
       params.wantsTelegram,
       params.locale,
@@ -90,23 +99,32 @@ export async function getActiveSubscriptions(channel: "telegram" | "email"): Pro
 
 // Offers matching a subscription's filters that haven't been sent yet on
 // this channel — the delivery table is the whole "only new matches" logic.
+// An empty countries/specialties array (search-created subscriptions can
+// have either, spec 2026-09-27) means "no restriction on that dimension" —
+// every subscription from the standalone /alerts picker always has both
+// non-empty, so this is a no-op for them.
 export async function getUndeliveredMatches(
   subscription: AlertSubscription,
   channel: "telegram" | "email",
   limit = 20
 ): Promise<Offer[]> {
+  const keywordPattern = subscription.keyword ? `%${subscription.keyword.replace(/[%_]/g, "\\$&")}%` : null;
+
   return query<Offer>(
     `SELECT o.* FROM offers o
      WHERE o.published_at >= now() - interval '48 hours'
-       AND o.country_code = ANY($1)
-       AND o.specialty = ANY($2)
+       AND (array_length($1::text[], 1) IS NULL OR o.country_code = ANY($1))
+       AND (array_length($2::text[], 1) IS NULL OR o.specialty = ANY($2))
+       AND ($6::text IS NULL OR o.city = $6)
+       AND ($7::text IS NULL OR o.title_original ILIKE $7 ESCAPE '\\' OR o.title_en ILIKE $7 ESCAPE '\\'
+            OR o.title_fr ILIKE $7 ESCAPE '\\' OR o.title_es ILIKE $7 ESCAPE '\\' OR o.company ILIKE $7 ESCAPE '\\')
        AND NOT EXISTS (
          SELECT 1 FROM alert_deliveries d
          WHERE d.subscription_id = $3 AND d.offer_id = o.id AND d.channel = $4
        )
      ORDER BY o.published_at DESC
      LIMIT $5`,
-    [subscription.countries, subscription.specialties, subscription.id, channel, limit]
+    [subscription.countries, subscription.specialties, subscription.id, channel, limit, subscription.city, keywordPattern]
   );
 }
 
