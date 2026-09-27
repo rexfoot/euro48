@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getVisibleOffers } from "@/lib/offers";
 import { countsByCountry } from "@/lib/aggregate";
+import { MAX_VISIBLE_OFFERS } from "@/lib/constants";
 import { Ticker } from "@/components/Ticker";
 import { AnalogClock } from "@/components/AnalogClock";
 import { Counter } from "@/components/Counter";
@@ -25,7 +26,14 @@ export const revalidate = 60;
 const RECENT_OFFERS_COUNT = 10;
 
 export default async function Home() {
-  const offers = await getVisibleOffers({ limit: 500 });
+  // Was capped at 500 combined across every country — with 18 countries
+  // and some sources (Germany, Belgium) alone producing hundreds of very
+  // recent offers, that shared window could push a smaller/older
+  // country's offers out of it entirely, showing "—" on its card even
+  // though it genuinely had offers (found live 2026-09-28: Belgium had
+  // 668, Portugal 22, both showing "—"). Matches the same all-offers need
+  // app/search/page.tsx already has, and the same limit it already uses.
+  const offers = await getVisibleOffers({ limit: MAX_VISIBLE_OFFERS });
   const countryCounts = countsByCountry(offers);
 
   return (
