@@ -51,6 +51,7 @@ export async function getVisibleOffers(filters: {
   country?: CountryCode;
   city?: string;
   specialty?: SpecialtyId;
+  q?: string;
   limit?: number;
 } = {}): Promise<Offer[]> {
   const conditions: string[] = [`published_at >= now() - interval '${OFFER_VISIBLE_HOURS} hours'`];
@@ -67,6 +68,15 @@ export async function getVisibleOffers(filters: {
   if (filters.specialty) {
     params.push(filters.specialty);
     conditions.push(`specialty = $${params.length}`);
+  }
+  if (filters.q) {
+    // Title in any of the 3 UI languages, or the company — a keyword
+    // search doesn't need to know which language the ad or the query is in.
+    params.push(`%${filters.q.replace(/[%_]/g, "\\$&")}%`);
+    const p = params.length;
+    conditions.push(
+      `(title_original ILIKE $${p} ESCAPE '\\' OR title_en ILIKE $${p} ESCAPE '\\' OR title_fr ILIKE $${p} ESCAPE '\\' OR title_es ILIKE $${p} ESCAPE '\\' OR company ILIKE $${p} ESCAPE '\\')`
+    );
   }
 
   const limit = Math.min(filters.limit ?? 200, 2000);

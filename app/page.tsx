@@ -4,6 +4,7 @@ import { Ticker } from "@/components/Ticker";
 import { GlobeView } from "@/components/GlobeView";
 import { Counter } from "@/components/Counter";
 import { CountryGrid } from "@/components/CountryGrid";
+import { SearchBar } from "@/components/SearchBar";
 
 export const revalidate = 60;
 
@@ -18,6 +19,7 @@ export default async function Home() {
 
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />
+        <SearchBar />
         <GlobeView cityCounts={cityCounts} countryCounts={countryCounts} />
       </section>
 

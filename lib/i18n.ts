@@ -61,6 +61,10 @@ export const UI: Record<Locale, Record<string, string>> = {
     install_button: "Installer",
     install_dismiss: "Plus tard",
     install_ios_hint: "Appuie sur Partager, puis « Sur l'écran d'accueil ».",
+    search_placeholder: "Poste ou mots-clés…",
+    search_button: "Chercher",
+    search_results_for: "{n} résultat(s) pour « {q} »",
+    search_results_count: "{n} résultat(s)",
   },
   es: {
     counter_prefix: "+",
@@ -116,6 +120,10 @@ export const UI: Record<Locale, Record<string, string>> = {
     install_button: "Instalar",
     install_dismiss: "Ahora no",
     install_ios_hint: "Toca Compartir y luego «Añadir a pantalla de inicio».",
+    search_placeholder: "Puesto o palabras clave…",
+    search_button: "Buscar",
+    search_results_for: "{n} resultado(s) para «{q}»",
+    search_results_count: "{n} resultado(s)",
   },
   en: {
     counter_prefix: "+",
@@ -171,6 +179,10 @@ export const UI: Record<Locale, Record<string, string>> = {
     install_button: "Install",
     install_dismiss: "Not now",
     install_ios_hint: "Tap Share, then \"Add to Home Screen\".",
+    search_placeholder: "Job title or keywords…",
+    search_button: "Search",
+    search_results_for: "{n} result(s) for \"{q}\"",
+    search_results_count: "{n} result(s)",
   },
 };
 
