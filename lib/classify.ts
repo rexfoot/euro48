@@ -124,6 +124,42 @@ export function resolveCity(index: CityIndex, rawPieces: string[], country: Coun
   return { city: fallbackCityName(rawPieces) ?? OTHER_CITY, lat: null, lng: null };
 }
 
+// US state postal codes + a few other unambiguous non-EU-market markers.
+// GeoNames' alternatenames for small European towns occasionally happen to
+// spell out a big non-European city's name too (e.g. "Sant Francesc de
+// Formentera" in Spain also lists "San Francisco" — found live 2026-09-27
+// via Greenhouse/Lever US postings like "San Francisco, CA" getting placed
+// in Spain). A piece like ", CA" or ", NY" right next to that match is
+// conclusive proof the real place is NOT in our 15 countries, so it's
+// checked first and short-circuits the whole lookup rather than trusting
+// the coincidental city-name match.
+// Checked as whole words only (never substring) — a naive substring check
+// would false-positive on real EU places that merely contain these letters,
+// e.g. "Cannes".includes("ca"). Deliberately excludes codes that double as
+// ordinary words in our target languages or common job-posting suffixes:
+// "co" (Irish "Co. Cork"), "il"/"la" (French/Italian articles), "in"/"on"
+// ("In-office"/"On-site" tags), "me" (pronoun), "or" (conjunction), and all
+// Canadian province codes (qc/on collide the same way) — "canada" alone
+// covers that market safely.
+const NON_EU_WORD_MARKERS = new Set([
+  "usa", "us", "canada", "uk",
+  "al", "ak", "az", "ar", "ca", "ct", "fl", "ga", "hi", "id", "ia", "ks", "ky",
+  "md", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd",
+  "oh", "ok", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc",
+  "india", "bangalore", "singapore",
+]);
+// Checked as substrings — multi-word phrases with no realistic collision
+// risk against a European place name.
+const NON_EU_PHRASE_MARKERS = ["united states", "united kingdom"];
+
+function hasNonEuMarker(rawPieces: string[]): boolean {
+  return rawPieces.flatMap(splitIntoPieces).some((p) => {
+    const normalized = normalizeForFingerprint(p);
+    if (NON_EU_PHRASE_MARKERS.some((phrase) => normalized.includes(phrase))) return true;
+    return normalized.split(" ").some((word) => NON_EU_WORD_MARKERS.has(word));
+  });
+}
+
 // For Arbeitnow, which has no per-country field at all: a GeoNames match
 // (searched across all 15 countries — nothing else to scope it by) gives
 // us the country for free; otherwise look for a country name mentioned
@@ -134,6 +170,8 @@ export function resolveCityWithCountry(
   index: CityIndex,
   rawPieces: string[]
 ): (ResolvedCity & { country: CountryCode }) | null {
+  if (hasNonEuMarker(rawPieces)) return null;
+
   const rec = lookupPieces(index.global, rawPieces);
   if (rec) return { city: rec.name, country: rec.country, lat: rec.lat, lng: rec.lng };
 
