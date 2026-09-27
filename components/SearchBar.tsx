@@ -8,15 +8,19 @@ import { t } from "@/lib/i18n";
 
 // Used on the /search results page — the home page has its own HomeSearch
 // component instead (spec 2026-09-27). Job/Country/City, with the job box
-// showing métier suggestions on focus, same pattern as HomeSearch.
+// showing métier suggestions on focus, same pattern as HomeSearch. City is
+// a dropdown of real cities that currently have an offer, scoped to
+// whichever country is picked — no free typing (spec 2026-09-27).
 export function SearchBar({
   defaultQuery = "",
   defaultCountry,
   defaultCity = "",
+  citiesByCountry,
 }: {
   defaultQuery?: string;
   defaultCountry?: CountryCode;
   defaultCity?: string;
+  citiesByCountry: Partial<Record<CountryCode, { city: string; count: number }[]>>;
 }) {
   const router = useRouter();
   const { locale } = useLocale();
@@ -25,6 +29,8 @@ export function SearchBar({
   const [city, setCity] = useState(defaultCity);
   const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyId | "">("");
   const [showSpecialties, setShowSpecialties] = useState(false);
+
+  const cityOptions = country ? (citiesByCountry[country] ?? []) : [];
 
   function onQChange(value: string) {
     setQ(value);
@@ -37,13 +43,18 @@ export function SearchBar({
     setShowSpecialties(false);
   }
 
+  function onCountryChange(value: CountryCode | "") {
+    setCountry(value);
+    setCity(""); // last city likely doesn't belong to the new country
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (selectedSpecialty) params.set("specialty", selectedSpecialty);
     else if (q.trim()) params.set("q", q.trim());
     if (country) params.set("country", country);
-    if (city.trim()) params.set("city", city.trim());
+    if (city) params.set("city", city);
     router.push(`/search?${params.toString()}`);
   }
 
@@ -79,7 +90,7 @@ export function SearchBar({
         </div>
         <select
           value={country}
-          onChange={(e) => setCountry(e.target.value as CountryCode | "")}
+          onChange={(e) => onCountryChange(e.target.value as CountryCode | "")}
           className="rounded-xl border border-border bg-panel px-3 py-3 text-sm outline-none focus:border-accent-amber/50 sm:w-44"
         >
           <option value="">{t(locale, "all_countries")}</option>
@@ -96,13 +107,19 @@ export function SearchBar({
           {t(locale, "search_button")}
         </button>
       </div>
-      <input
-        type="text"
+      <select
         value={city}
         onChange={(e) => setCity(e.target.value)}
-        placeholder={t(locale, "search_city")}
-        className="w-full rounded-xl border border-border bg-panel px-4 py-3 text-base outline-none focus:border-accent-amber/50 sm:max-w-xs"
-      />
+        disabled={!country}
+        className="w-full rounded-xl border border-border bg-panel px-4 py-3 text-base outline-none focus:border-accent-amber/50 disabled:opacity-50 sm:max-w-xs"
+      >
+        <option value="">{country ? t(locale, "all_cities") : t(locale, "choose_city")}</option>
+        {cityOptions.map(({ city: cityName, count }) => (
+          <option key={cityName} value={cityName}>
+            {cityName} (+{count})
+          </option>
+        ))}
+      </select>
     </form>
   );
 }
