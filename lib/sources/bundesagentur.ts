@@ -66,6 +66,8 @@ async function fetchPage(page: number): Promise<{ jobs: BaJob[]; maxErgebnisse: 
 }
 
 function build(job: BaJob, cityIndex: CityIndex): NewOffer | null {
+  if (!job.stellenangebotsTitel) return null;
+
   const ort = job.stellenlokationen?.[0]?.adresse?.ort;
   const { city, lat, lng } = resolveCity(cityIndex, ort ? [ort] : [], "DE");
   const specialty = matchSpecialty(`${job.stellenangebotsTitel} ${job.hauptberuf ?? ""}`);
