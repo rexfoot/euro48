@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 
-const DISMISS_KEY = "euro48_install_dismissed_at";
+const DISMISS_KEY = "euro48_install_dismissed_at_v2";
 const DISMISS_DAYS = 14;
 
 type BeforeInstallPromptEvent = Event & {
@@ -63,8 +63,10 @@ export function InstallAppBanner() {
   async function install() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    window.localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome !== "accepted") {
+      window.localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    }
     setDeferredPrompt(null);
     setPlatform(null);
   }
