@@ -76,9 +76,13 @@ export async function linkTelegramChat(subscriptionId: string, chatId: string): 
   await query(`UPDATE alert_subscriptions SET telegram_chat_id = $2 WHERE id = $1`, [subscriptionId, chatId]);
 }
 
+// Unsubscribing deletes the row outright (not a soft deactivate) — the
+// privacy policy promises this removes the subscriber's data, and
+// alert_deliveries cascades on delete so nothing is left behind (spec
+// 2026-09-28).
 export async function deactivateSubscription(id: string): Promise<boolean> {
   const rows = await query<{ id: string }>(
-    `UPDATE alert_subscriptions SET active = false WHERE id = $1 AND active RETURNING id`,
+    `DELETE FROM alert_subscriptions WHERE id = $1 RETURNING id`,
     [id]
   );
   return rows.length > 0;
@@ -86,7 +90,7 @@ export async function deactivateSubscription(id: string): Promise<boolean> {
 
 export async function deactivateByChatId(chatId: string): Promise<boolean> {
   const rows = await query<{ id: string }>(
-    `UPDATE alert_subscriptions SET active = false WHERE telegram_chat_id = $1 AND active RETURNING id`,
+    `DELETE FROM alert_subscriptions WHERE telegram_chat_id = $1 RETURNING id`,
     [chatId]
   );
   return rows.length > 0;
