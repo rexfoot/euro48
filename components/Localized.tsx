@@ -39,9 +39,12 @@ export function SectionLabel({ labelKey }: { labelKey: string }) {
 }
 
 // Housing + furniture affiliate links, sourced from AFFILIATE_LINKS
-// per country (spec 2026-09-28).
-const AFFILIATE_LINK_CLASS =
-  "inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-panel px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent-amber/50 hover:text-foreground";
+// per country (spec 2026-09-28). Brand colors per partner (2026-09-30):
+// Booking.com blue / Amazon orange, each with its own darker hover shade.
+const AFFILIATE_LINK_BASE_CLASS =
+  "inline-flex w-fit items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs transition-colors";
+const HOUSING_LINK_CLASS = `${AFFILIATE_LINK_BASE_CLASS} bg-[#0071C2] text-white hover:bg-[#005A9C]`;
+const FURNITURE_LINK_CLASS = `${AFFILIATE_LINK_BASE_CLASS} bg-[#FF9900] text-[#111] hover:bg-[#E68A00]`;
 
 export function HousingLink({ code }: { code: CountryCode }) {
   const { locale } = useLocale();
@@ -53,7 +56,7 @@ export function HousingLink({ code }: { code: CountryCode }) {
         href={links.housingUrl}
         target="_blank"
         rel="sponsored noopener"
-        className={AFFILIATE_LINK_CLASS}
+        className={HOUSING_LINK_CLASS}
       >
         🏠 {t(locale, "housing_link")}
       </a>
@@ -61,7 +64,7 @@ export function HousingLink({ code }: { code: CountryCode }) {
         href={links.furnitureUrl}
         target="_blank"
         rel="sponsored noopener"
-        className={AFFILIATE_LINK_CLASS}
+        className={FURNITURE_LINK_CLASS}
       >
         🛋️ {t(locale, "furniture_link")}
       </a>
