@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { COUNTRY_SERVICES } from "@/lib/country-services";
 import type { CountryCode } from "@/lib/constants";
+import { AdBanner } from "./AdBanner";
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
@@ -54,6 +55,9 @@ export function CityDistance({ countryCode, city, cityLat, cityLng }: CityDistan
             <ServiceGroup title="Logement" items={services.housing} />
             <ServiceGroup title="Transport" items={services.transport} />
             <ServiceGroup title="Administration" items={services.administration} />
+          </div>
+          <div className="mt-4 border-t border-border pt-4">
+            <AdBanner />
           </div>
         </div>
       )}
