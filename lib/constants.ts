@@ -281,7 +281,7 @@ export const LOCALES = ["fr", "es", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const OFFER_VISIBLE_HOURS = 48;
-export const OFFER_DELETE_HOURS = 72;
+export const OFFER_DELETE_HOURS = 720;
 // Raised from 2000 on 2026-09-27, once the volume-collapse bug (see
 // db/schema.sql, offers_specialty_allowed) was fixed and supply could
 // actually reach — and exceed — the old cap.
