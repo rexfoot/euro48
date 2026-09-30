@@ -17,7 +17,7 @@ jobs:
           # hard 2500/month free-tier cap (see lib/sources/adzuna.ts), so it
           # only runs once per hour (top-of-hour) to stay near the intended
           # ~1440 calls/month.
-          SOURCES="eures arbeitnow bundesagentur jobtech nav francetravail leforem greenhouse lever"
+          SOURCES="eures arbeitnow bundesagentur jobtech nav francetravail leforem greenhouse lever visasponsor eurostaffs nextleveljobs jobbatical germanyworkstay"
           if [ "$(date -u +%M)" = "00" ]; then
             SOURCES="$SOURCES adzuna"
           fi

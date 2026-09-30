@@ -11,6 +11,11 @@ import { fetchFranceTravailOffers } from "@/lib/sources/francetravail";
 import { fetchLeforemOffers } from "@/lib/sources/leforem";
 import { fetchGreenhouseOffers } from "@/lib/sources/greenhouse";
 import { fetchLeverOffers } from "@/lib/sources/lever";
+import { fetchVisaSponsorOffers } from "@/lib/sources/visasponsor";
+import { fetchEuroStaffsOffers } from "@/lib/sources/eurostaffs";
+import { fetchNextLevelJobsOffers } from "@/lib/sources/nextleveljobs";
+import { fetchJobbaticalOffers } from "@/lib/sources/jobbatical";
+import { fetchGermanyWorkStayOffers } from "@/lib/sources/germanyworkstay";
 import { upsertOffers } from "@/lib/offers";
 import { query } from "@/lib/db";
 import { mapWithConcurrency } from "@/lib/concurrency";
@@ -180,6 +185,11 @@ const SOURCES: Record<string, (country?: string) => Promise<Record<string, Count
   leforem: runLeforem,
   greenhouse: runGreenhouse,
   lever: runLever,
+  visasponsor: async () => ({ visasponsor: await upsertOffers(await fetchVisaSponsorOffers()) }),
+  eurostaffs: async () => ({ eurostaffs: await upsertOffers(await fetchEuroStaffsOffers()) }),
+  nextleveljobs: async () => ({ nextleveljobs: await upsertOffers(await fetchNextLevelJobsOffers()) }),
+  jobbatical: async () => ({ jobbatical: await upsertOffers(await fetchJobbaticalOffers()) }),
+  germanyworkstay: async () => ({ germanyworkstay: await upsertOffers(await fetchGermanyWorkStayOffers()) }),
 };
 
 export async function POST(req: NextRequest) {
