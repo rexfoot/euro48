@@ -4,6 +4,7 @@ import type { Offer } from "@/lib/offers";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 import { titleFor, ageBadge, isUrgentOffer, minutesOrHoursAgo, cityLabel } from "@/lib/offer-display";
+import { ServicesModal } from "./ServicesModal";
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const { locale } = useLocale();
@@ -39,14 +40,22 @@ export function OfferCard({ offer }: { offer: Offer }) {
         <p className="whitespace-pre-wrap text-sm text-foreground">{offer.description}</p>
       )}
       <p className="text-xs text-muted/70">{t(locale, "ad_language", { lang: offer.language_of_ad.toUpperCase() })}</p>
-      <a
-        href={offer.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-accent-amber px-3 py-1.5 text-sm font-medium text-[#070B14] transition-opacity hover:opacity-90"
-      >
-        {t(locale, "see_offer")}
-      </a>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <a
+          href={offer.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-fit items-center gap-1 rounded-full bg-accent-amber px-3 py-1.5 text-sm font-medium text-[#070B14] transition-opacity hover:opacity-90"
+        >
+          {t(locale, "see_offer")}
+        </a>
+        <ServicesModal
+          countryCode={offer.country_code}
+          city={offer.city}
+          cityLat={offer.city_lat}
+          cityLng={offer.city_lng}
+        />
+      </div>
     </div>
   );
 }
