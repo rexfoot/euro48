@@ -11,7 +11,8 @@ const OUTSIDE_VETO_PATTERNS = [
   /work\s*permit/i,
   /permit\s*to\s*work/i,
   /right\s*to\s*work/i,
-  /arbeitserlaubnis\s*erforderlich/i,
+  /arbeitserlaubnis/i,
+  /arbeitserlaubnis/i,
   /titre\s*de\s*séjour/i,
   /permis\s*de\s*travail/i,
   /must\s*live\s*in/i,
@@ -24,6 +25,14 @@ const OUTSIDE_VETO_PATTERNS = [
   /ue\s*\/\s*eee\s*obligatoire/i,
   /empezar\s*mañana/i,
   /vikariat/i,
+  /eu\s*passport/i,
+  /eu\s*citizen/i,
+  /citizens?\s*of\s*the\s*eu/i,
+  /residen(?:t|ce)\s+(?:in|of)\s+the\s+eu/i,
+  /based\s+in\s+the\s+eu/i,
+  /living\s+in\s+the\s+eu/i,
+  /already\s+in\s+europe/i,
+  /must\s+be\s+in\s+europe/i,
 ];
 
 const POSITIVE_SIGNAL_PATTERNS = [
@@ -45,6 +54,12 @@ const POSITIVE_SIGNAL_PATTERNS = [
   /contratación\s*internacional/i,
   /permiso\s*de\s*trabajo\s*proporcionado/i,
   /patrocinio/i,
+  /visa\s*support/i,
+  /work\s*visa/i,
+  /international\s*candidates?\s*welcome/i,
+  /foreign\s*workers?\s*welcome/i,
+  /no\s*eu\s*passport\s*required/i,
+  /without\s*eu\s*passport/i,
 ];
 
 interface ProfessionDef {
