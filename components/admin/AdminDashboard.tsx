@@ -4,6 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { COUNTRIES, SPECIALTIES, type CountryCode, type SpecialtyId } from "@/lib/constants";
 
+type Ad = {
+  id: string;
+  image_url: string;
+  link_url: string;
+  title: string;
+  active: boolean;
+};
+
 type ManualOffer = {
   id: string;
   title_original: string;
@@ -62,11 +70,14 @@ function closestVisibility(expiresAt: string | null): VisibilityChoice {
 export function AdminDashboard() {
   const router = useRouter();
   const [offers, setOffers] = useState<ManualOffer[] | null>(null);
+  const [ads, setAds] = useState<Ad[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [adForm, setAdForm] = useState({ imageUrl: "", linkUrl: "", title: "" });
+  const [adSaving, setAdSaving] = useState(false);
 
   const loadOffers = useCallback(async () => {
     const res = await fetch("/api/admin/offers");
@@ -76,9 +87,18 @@ export function AdminDashboard() {
     }
   }, []);
 
+  const loadAds = useCallback(async () => {
+    const res = await fetch("/api/admin/ads");
+    if (res.ok) {
+      const data = await res.json();
+      setAds(data.ads);
+    }
+  }, []);
+
   useEffect(() => {
     loadOffers();
-  }, [loadOffers]);
+    loadAds();
+  }, [loadOffers, loadAds]);
 
   async function onLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -308,6 +328,76 @@ export function AdminDashboard() {
           )}
         </div>
       </form>
+
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-panel p-4">
+        <h2 className="text-base font-semibold">Publicidad</h2>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className={labelClass}>URL de la imagen</label>
+            <input
+              className={inputClass}
+              value={adForm.imageUrl}
+              onChange={(e) => setAdForm((f) => ({ ...f, imageUrl: e.target.value }))}
+              placeholder="https://ejemplo.com/imagen.jpg"
+              required
+            />
+          </div>
+          <div>
+            <label className={labelClass}>URL del enlace</label>
+            <input
+              className={inputClass}
+              value={adForm.linkUrl}
+              onChange={(e) => setAdForm((f) => ({ ...f, linkUrl: e.target.value }))}
+              placeholder="https://empresa.com/oferta"
+              required
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Título (opcional)</label>
+            <input
+              className={inputClass}
+              value={adForm.title}
+              onChange={(e) => setAdForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="Nombre de la empresa"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={adSaving}
+            onClick={async () => {
+              setAdSaving(true);
+              const res = await fetch("/api/admin/ads", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: adForm.imageUrl, linkUrl: adForm.linkUrl, title: adForm.title }),
+              });
+              if (res.ok) {
+                setAdForm({ imageUrl: "", linkUrl: "", title: "" });
+                loadAds();
+              }
+              setAdSaving(false);
+            }}
+            className="rounded-xl bg-accent-amber px-4 py-3 text-base font-semibold text-background transition-opacity disabled:opacity-50"
+          >
+            {adSaving ? "Guardando…" : "Añadir anuncio"}
+          </button>
+        </div>
+
+        {ads.length > 0 && (
+          <div className="mt-4 flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-muted">Anuncios activos</h3>
+            {ads.map((ad) => (
+              <div key={ad.id} className="flex items-center gap-3 rounded-lg border border-border bg-background p-2">
+                <img src={ad.image_url} alt={ad.title} className="h-12 w-12 rounded object-cover" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{ad.title || "Anuncio"}</p>
+                  <p className="text-xs text-muted">{ad.link_url}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">Mis ofertas manuales</h2>
