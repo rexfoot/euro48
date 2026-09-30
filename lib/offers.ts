@@ -3,6 +3,7 @@ import { query } from "./db";
 import { buildFingerprint } from "./fingerprint";
 import { COUNTRY_CODES, OTHER_CITY, SPECIALTY_IDS, MAX_VISIBLE_OFFERS, URGENT_KEYWORDS, type CountryCode, type SpecialtyId } from "./constants";
 import { visibleCondition } from "./visibility";
+import { classifyOffer } from "./eligibility";
 
 export type Offer = {
   id: string;
@@ -202,6 +203,8 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       countryCode: offer.countryCode,
     });
 
+    const classification = classifyOffer(offer.titleOriginal, offer.description ?? "");
+
     const values = [
       offer.id,
       offer.titleOriginal,
@@ -224,6 +227,10 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
       offer.cityLng ?? null,
       offer.description ?? null,
       offer.expiresAt ? offer.expiresAt.toISOString() : null,
+      classification.status,
+      classification.professionId,
+      classification.excludeReasons,
+      classification.positiveSignals,
     ];
 
     try {
@@ -232,12 +239,12 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            id, title_original, title_en, title_fr, title_es, company,
            country_code, city, specialty, contract_type, salary_raw, remote,
            language_of_ad, url, source, published_at, fingerprint, city_lat, city_lng,
-           description, expires_at
+           description, expires_at, eligibility, profession_id, exclude_reasons, positive_signals
          ) VALUES (
            $1::text, $2::text, $3::text, $4::text, $5::text, $6::text,
            $7::text, $8::text, $9::text, $10::text, $11::text, $12::boolean,
            $13::text, $14::text, $15::text, $16::timestamptz, $17::text, $18::double precision, $19::double precision,
-           $20::text, $21::timestamptz
+           $20::text, $21::timestamptz, $22::text, $23::text, $24::text[], $25::text[]
          )
          ON CONFLICT (fingerprint) DO UPDATE SET
            title_original = EXCLUDED.title_original,
@@ -253,7 +260,11 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            city_lat = EXCLUDED.city_lat,
            city_lng = EXCLUDED.city_lng,
            description = EXCLUDED.description,
-           expires_at = EXCLUDED.expires_at
+           expires_at = EXCLUDED.expires_at,
+           eligibility = EXCLUDED.eligibility,
+           profession_id = EXCLUDED.profession_id,
+           exclude_reasons = EXCLUDED.exclude_reasons,
+           positive_signals = EXCLUDED.positive_signals
          WHERE EXCLUDED.published_at > offers.published_at
          RETURNING id`,
         values
@@ -300,7 +311,11 @@ export async function upsertOffers(offers: NewOffer[]): Promise<{ inserted: numb
            city_lat = $18::double precision,
            city_lng = $19::double precision,
            description = $20::text,
-           expires_at = $21::timestamptz
+           expires_at = $21::timestamptz,
+           eligibility = $22::text,
+           profession_id = $23::text,
+           exclude_reasons = $24::text[],
+           positive_signals = $25::text[]
          WHERE id = $1::text AND $16::timestamptz > published_at`,
         values
       );
