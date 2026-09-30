@@ -22,7 +22,7 @@ const PROFESSION_IDS = [
 ] as const;
 
 export default async function RadarHorsUePage({ searchParams }: { searchParams: Promise<{ profession?: string; country?: string; badge?: string }> }) {
-  const { profession, country, badge } = await searchParams;
+  const { profession = "", country = "", badge = "" } = await searchParams;
   const offers = await getVisibleOffers({ limit: 2000 });
 
   const radarOffers = offers
