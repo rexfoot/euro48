@@ -9,6 +9,7 @@ import { BackLink, SectionLabel, CityDisplayName } from "@/components/Localized"
 import { pageAlternates, countryNameFr } from "@/lib/seo";
 import { cityLabel } from "@/lib/offer-display";
 import { getCityCoords, distanceKm } from "@/lib/city-index";
+import { CityDistance } from "@/components/CityDistance";
 
 export const revalidate = 60;
 
@@ -65,7 +66,13 @@ export default async function CityPage({ params }: Props) {
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
       <BackLink href={`/${code.toLowerCase()}`} />
       <h1 className="mt-2 mb-1 text-2xl font-semibold"><CityDisplayName city={city} country={code} /></h1>
-      <p className="mb-6 text-sm text-accent-amber">+{offers.length}</p>
+      <p className="mb-4 text-sm text-accent-amber">+{offers.length}</p>
+      <CityDistance
+        countryCode={code}
+        city={city}
+        cityLat={offers[0]?.city_lat}
+        cityLng={offers[0]?.city_lng}
+      />
       {offers.length === 0 ? (
         <NearestCities country={code} cities={nearby} />
       ) : (
