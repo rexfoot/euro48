@@ -333,13 +333,32 @@ export function AdminDashboard() {
         <h2 className="text-base font-semibold">Publicidad</h2>
         <div className="flex flex-col gap-3">
           <div>
-            <label className={labelClass}>URL de la imagen</label>
+            <label className={labelClass}>Subir imagen desde tu ordenador</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setAdForm((f) => ({ ...f, imageUrl: reader.result as string }));
+                };
+                reader.readAsDataURL(file);
+              }}
+              className="w-full rounded-xl border border-border bg-panel px-4 py-3 text-sm text-foreground file:mr-4 file:rounded-lg file:border-0 file:bg-accent-amber file:px-4 file:py-2 file:text-sm file:font-semibold file:text-background"
+            />
+            {adForm.imageUrl && adForm.imageUrl.startsWith("data:") && (
+              <img src={adForm.imageUrl} alt="Preview" className="mt-2 h-20 w-20 rounded-lg object-cover" />
+            )}
+          </div>
+          <div>
+            <label className={labelClass}>URL de la imagen (alternativa)</label>
             <input
               className={inputClass}
-              value={adForm.imageUrl}
+              value={adForm.imageUrl.startsWith("data:") ? "" : adForm.imageUrl}
               onChange={(e) => setAdForm((f) => ({ ...f, imageUrl: e.target.value }))}
               placeholder="https://ejemplo.com/imagen.jpg"
-              required
             />
           </div>
           <div>
