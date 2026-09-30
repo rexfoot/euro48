@@ -20,7 +20,7 @@ export default async function RadarHorsUePage() {
   const radarOffers = offers
     .map(offer => {
       const result = classifyOffer(offer.title_original, offer.description ?? "");
-      return { offer, ...result };
+      return { ...offer, status: result.status, professionId: result.professionId };
     })
     .filter(r => r.status === "A" || r.status === "B");
 
