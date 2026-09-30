@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getVisibleOffers } from "@/lib/offers";
 import { classifyOffer } from "@/lib/eligibility";
-import { COUNTRIES, type CountryCode } from "@/lib/constants";
 import { RadarOfferCard } from "@/components/RadarOfferCard";
 import { RadarToggle } from "@/components/RadarToggle";
+import { RadarFilters } from "@/components/RadarFilters";
 import { pageAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -15,12 +14,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-const PROFESSION_IDS = [
-  "carnicero", "panadero", "peluquero", "cocina", "construccion",
-  "conductor", "mecanica", "limpieza", "agricultura", "hosteleria",
-  "logistica", "cuidado",
-] as const;
-
 export default async function RadarHorsUePage() {
   const offers = await getVisibleOffers({ limit: 2000 });
 
@@ -29,10 +22,7 @@ export default async function RadarHorsUePage() {
       const result = classifyOffer(offer.title_original, offer.description ?? "");
       return { offer, ...result };
     })
-    .filter(r => r.status === "A" || r.status === "B")
-    .filter(r => !profession || r.professionId === profession)
-    .filter(r => !country || r.offer.country_code === country)
-    .filter(r => !badge || r.status === badge);
+    .filter(r => r.status === "A" || r.status === "B");
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
@@ -50,51 +40,7 @@ export default async function RadarHorsUePage() {
         <RadarToggle />
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {PROFESSION_IDS.map(id => (
-          <Link
-            key={id}
-            href={profession === id ? "/radar-hors-ue" : `/radar-hors-ue?profession=${id}`}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${profession === id ? "border-emerald-400 bg-emerald-400/20 text-emerald-400" : "border-border bg-panel hover:border-emerald-400/50"}`}
-          >
-            {id}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-4">
-        <select
-          value={country ?? ""}
-          onChange={e => {
-            const params = new URLSearchParams();
-            if (profession) params.set("profession", profession);
-            if (e.target.value) params.set("country", e.target.value);
-            if (badge) params.set("badge", badge);
-            window.location.href = `/radar-hors-ue${params.toString() ? `?${params}` : ""}`;
-          }}
-          className="rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent-amber/50"
-        >
-          <option value="">Tous les pays</option>
-          {COUNTRIES.map(c => (
-            <option key={c.code} value={c.code}>{c.name.fr}</option>
-          ))}
-        </select>
-        <select
-          value={badge ?? ""}
-          onChange={e => {
-            const params = new URLSearchParams();
-            if (profession) params.set("profession", profession);
-            if (country) params.set("country", country);
-            if (e.target.value) params.set("badge", e.target.value);
-            window.location.href = `/radar-hors-ue${params.toString() ? `?${params}` : ""}`;
-          }}
-          className="rounded-xl border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent-amber/50"
-        >
-          <option value="">Tous</option>
-          <option value="A">Confirmado</option>
-          <option value="B">A verificar</option>
-        </select>
-      </div>
+      <RadarFilters onFilter={() => {}} />
 
       <div className="mt-6 flex flex-col gap-3">
         {radarOffers.length === 0 ? (
