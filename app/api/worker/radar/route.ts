@@ -9,7 +9,7 @@ import { fetchGermanyWorkStayOffers } from "@/lib/sources/germanyworkstay";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-const RADAR_SOURCES: Record<string, () => Promise<{ inserted: number; skipped: number }>> = {
+const RADAR_SOURCES: Record<string, () => Promise<import("@/lib/offers").NewOffer[]>> = {
   visasponsor: fetchVisaSponsorOffers,
   eurostaffs: fetchEuroStaffsOffers,
   nextleveljobs: fetchNextLevelJobsOffers,
