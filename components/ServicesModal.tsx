@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { COUNTRY_SERVICES } from "@/lib/country-services";
 import type { CountryCode } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
@@ -13,12 +13,42 @@ interface ServicesModalProps {
   cityLng?: number | null;
 }
 
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export function ServicesModal({ countryCode, city, cityLat, cityLng }: ServicesModalProps) {
   const [open, setOpen] = useState(false);
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
   const { locale } = useLocale();
   const services = COUNTRY_SERVICES[countryCode];
 
+  useEffect(() => {
+    if (open && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLat(pos.coords.latitude);
+          setUserLng(pos.coords.longitude);
+        },
+        () => {},
+        { timeout: 5000 }
+      );
+    }
+  }, [open]);
+
   if (!services) return null;
+
+  const distance =
+    userLat && userLng && cityLat && cityLng
+      ? Math.round(haversineDistance(userLat, userLng, cityLat, cityLng))
+      : null;
 
   return (
     <>
@@ -47,6 +77,13 @@ export function ServicesModal({ countryCode, city, cityLat, cityLng }: ServicesM
               </button>
             </div>
 
+            {distance !== null && (
+              <div className="mb-4 rounded-xl border border-accent-amber/30 bg-accent-amber/10 p-3 text-sm">
+                <p className="font-semibold text-accent-amber">{distance.toLocaleString()} km</p>
+                <p className="text-muted">depuis votre position</p>
+              </div>
+            )}
+
             {cityLat && cityLng && (
               <div className="mb-4 rounded-xl border border-border bg-background p-3 text-sm">
                 <p className="font-medium">{city}</p>
@@ -55,7 +92,7 @@ export function ServicesModal({ countryCode, city, cityLat, cityLng }: ServicesM
             )}
 
             <div className="space-y-4">
-              <ServiceSection title={t(locale, "radar_filter_country")} items={services.employment} />
+              <ServiceSection title="Emploi" items={services.employment} />
               <ServiceSection title="Logement" items={services.housing} />
               <ServiceSection title="Transport" items={services.transport} />
               <ServiceSection title="Administration" items={services.administration} />
