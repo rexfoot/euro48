@@ -1,28 +1,39 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import { getVisibleOffers } from "@/lib/offers";
 import { classifyOffer } from "@/lib/eligibility";
 import { RadarOfferCard } from "@/components/RadarOfferCard";
 import { RadarToggle } from "@/components/RadarToggle";
 import { RadarFilters } from "@/components/RadarFilters";
-import { pageAlternates } from "@/lib/seo";
+import type { Offer } from "@/lib/offers";
+import type { EligibilityStatus } from "@/lib/eligibility";
 
-export const metadata: Metadata = {
-  title: "RADAR HORS UE — Euro48",
-  description: "Offres d'emploi en Europe pour candidats hors UE. Sans garantie de visa.",
-  alternates: pageAlternates("/radar-hors-ue"),
-};
+type RadarOffer = Offer & { status: EligibilityStatus; professionId: string | null };
 
-export const revalidate = 60;
+export default function RadarHorsUePage() {
+  const [offers, setOffers] = useState<RadarOffer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ profession: "", country: "", badge: "" });
 
-export default async function RadarHorsUePage() {
-  const offers = await getVisibleOffers({ limit: 2000 });
+  useEffect(() => {
+    getVisibleOffers({ limit: 2000 })
+      .then(offers => {
+        const radar = offers
+          .map(offer => {
+            const result = classifyOffer(offer.title_original, offer.description ?? "");
+            return { ...offer, status: result.status, professionId: result.professionId };
+          })
+          .filter((r): r is RadarOffer => r.status === "A" || r.status === "B");
+        setOffers(radar);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  const radarOffers = offers
-    .map(offer => {
-      const result = classifyOffer(offer.title_original, offer.description ?? "");
-      return { offer, ...result };
-    })
-    .filter(r => r.status === "A" || r.status === "B");
+  const filtered = offers
+    .filter(r => !filters.profession || r.professionId === filters.profession)
+    .filter(r => !filters.country || r.country_code === filters.country)
+    .filter(r => !filters.badge || r.status === filters.badge);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
@@ -33,23 +44,25 @@ export default async function RadarHorsUePage() {
       </div>
 
       <p className="mt-4 text-sm text-muted">
-        <span className="font-semibold text-accent-amber">+{radarOffers.length}</span> offres HORS UE
+        <span className="font-semibold text-accent-amber">+{filtered.length}</span> offres HORS UE
       </p>
 
       <div className="mt-6">
         <RadarToggle />
       </div>
 
-      <RadarFilters onFilter={() => {}} />
+      <RadarFilters onFilter={setFilters} />
 
       <div className="mt-6 flex flex-col gap-3">
-        {radarOffers.length === 0 ? (
+        {loading ? (
+          <p className="text-sm text-muted">Chargement…</p>
+        ) : filtered.length === 0 ? (
           <p className="text-sm text-muted">Aucune offre confirmée cette semaine.</p>
         ) : (
-          radarOffers.map(r => (
+          filtered.map(r => (
             <RadarOfferCard
-              key={r.offer.id}
-              offer={r.offer}
+              key={r.id}
+              offer={r}
               status={r.status}
               professionId={r.professionId}
             />
