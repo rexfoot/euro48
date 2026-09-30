@@ -48,8 +48,8 @@ export default async function RadarHorsUePage() {
         ) : (
           radarOffers.map(r => (
             <RadarOfferCard
-              key={r.offer.id}
-              offer={r.offer}
+              key={r.id}
+              offer={r}
               status={r.status}
               professionId={r.professionId}
             />

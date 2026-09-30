@@ -4,6 +4,7 @@ import { useState } from "react";
 import { COUNTRIES } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
+import { RadarOfferCard } from "./RadarOfferCard";
 import type { Offer } from "@/lib/offers";
 import type { EligibilityStatus } from "@/lib/eligibility";
 
