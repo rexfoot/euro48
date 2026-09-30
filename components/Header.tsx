@@ -15,7 +15,7 @@ export function Header() {
           Euro<span className="text-accent-amber">48</span>
         </span>
         <span className="hidden text-xs text-muted sm:inline">{TAGLINE[locale]}</span>
-        <span className="ml-2 text-xs text-emerald-400/80">— RADAR HORS UE</span>
+        <span className="ml-2 text-xs text-emerald-400/80">— OPPORTUNITY</span>
       </Link>
       <LanguageSwitch />
     </header>
