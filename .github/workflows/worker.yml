@@ -17,7 +17,7 @@ jobs:
           # hard 2500/month free-tier cap (see lib/sources/adzuna.ts), so it
           # only runs once per hour (top-of-hour) to stay near the intended
           # ~1440 calls/month.
-          SOURCES="eures arbeitnow bundesagentur jobtech nav francetravail leforem greenhouse lever visasponsor eurostaffs nextleveljobs jobbatical germanyworkstay"
+          SOURCES="eures arbeitnow bundesagentur jobtech nav francetravail leforem greenhouse lever"
           if [ "$(date -u +%M)" = "00" ]; then
             SOURCES="$SOURCES adzuna"
           fi
@@ -38,3 +38,16 @@ jobs:
             echo "Worker call(s) failed:$FAILED"
             exit 1
           fi
+
+          RADAR_SOURCES="visasponsor eurostaffs nextleveljobs jobbatical germanyworkstay"
+          for source in $RADAR_SOURCES; do
+            status=$(curl -s -o response.json -w "%{http_code}" -X POST \
+              "https://euro48.com/api/worker/radar?source=$source" \
+              -H "Authorization: Bearer ${{ secrets.WORKER_SECRET }}")
+            echo "== RADAR $source: HTTP $status =="
+            cat response.json
+            echo
+            if [ "$status" -ne 200 ]; then
+              FAILED="$FAILED radar-$source"
+            fi
+          done

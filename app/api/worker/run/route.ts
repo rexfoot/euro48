@@ -185,6 +185,9 @@ const SOURCES: Record<string, (country?: string) => Promise<Record<string, Count
   leforem: runLeforem,
   greenhouse: runGreenhouse,
   lever: runLever,
+};
+
+const RADAR_SOURCES: Record<string, () => Promise<Record<string, CountResult>>> = {
   visasponsor: async () => ({ visasponsor: await upsertOffers(await fetchVisaSponsorOffers()) }),
   eurostaffs: async () => ({ eurostaffs: await upsertOffers(await fetchEuroStaffsOffers()) }),
   nextleveljobs: async () => ({ nextleveljobs: await upsertOffers(await fetchNextLevelJobsOffers()) }),
@@ -199,7 +202,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const isRadar = req.nextUrl.pathname.includes("/api/worker/radar");
   const sourceParam = req.nextUrl.searchParams.get("source");
+
+  if (isRadar) {
+    const run = sourceParam ? RADAR_SOURCES[sourceParam] : null;
+    if (!run) {
+      return NextResponse.json({ error: "unknown radar source" }, { status: 400 });
+    }
+    const results = await run();
+    return NextResponse.json({ status: "ok", source: sourceParam, results });
+  }
+
   const run = sourceParam ? SOURCES[sourceParam] : SOURCES.eures;
   if (!run) {
     return NextResponse.json({ error: "unknown source" }, { status: 400 });
