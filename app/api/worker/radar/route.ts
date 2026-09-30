@@ -5,6 +5,14 @@ import { fetchEuroStaffsOffers } from "@/lib/sources/eurostaffs";
 import { fetchNextLevelJobsOffers } from "@/lib/sources/nextleveljobs";
 import { fetchJobbaticalOffers } from "@/lib/sources/jobbatical";
 import { fetchGermanyWorkStayOffers } from "@/lib/sources/germanyworkstay";
+import { fetchIndeedRadarOffers } from "@/lib/sources/indeedradar";
+import { fetchLinkedInRadarOffers } from "@/lib/sources/linkedinradar";
+import { fetchWTTJOffers } from "@/lib/sources/wttj";
+import { fetchEuroBrusselsOffers } from "@/lib/sources/eurobrussels";
+import { fetchMakeItInGermanyOffers } from "@/lib/sources/makeitingermany";
+import { fetchMyVisaJobsOffers } from "@/lib/sources/myvisajobs";
+import { fetchJobBankGCOffers } from "@/lib/sources/jobbankgc";
+import { fetchJobboomOffers } from "@/lib/sources/jobboom";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -15,6 +23,14 @@ const RADAR_SOURCES: Record<string, () => Promise<import("@/lib/offers").NewOffe
   nextleveljobs: fetchNextLevelJobsOffers,
   jobbatical: fetchJobbaticalOffers,
   germanyworkstay: fetchGermanyWorkStayOffers,
+  indeedradar: fetchIndeedRadarOffers,
+  linkedinradar: fetchLinkedInRadarOffers,
+  wttj: fetchWTTJOffers,
+  eurobrussels: fetchEuroBrusselsOffers,
+  makeitingermany: fetchMakeItInGermanyOffers,
+  myvisajobs: fetchMyVisaJobsOffers,
+  jobbankgc: fetchJobBankGCOffers,
+  jobboom: fetchJobboomOffers,
 };
 
 export async function POST(req: NextRequest) {
