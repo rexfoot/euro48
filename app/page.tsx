@@ -8,6 +8,7 @@ import { Counter } from "@/components/Counter";
 import { CountryGrid } from "@/components/CountryGrid";
 import { HomeSearch } from "@/components/HomeSearch";
 import { RecentOffersSection } from "@/components/RecentOffersSection";
+import { RadarToggle } from "@/components/RadarToggle";
 import { pageAlternates } from "@/lib/seo";
 
 // `absolute` bypasses the root layout's "%s | Euro48" template (this title
@@ -42,12 +43,15 @@ export default async function Home() {
 
       <section className="flex flex-col items-center gap-4 px-4 py-8 text-center">
         <Counter count={offers.length} />
-        <HomeSearch />
         <AnalogClock />
+        <RadarToggle />
       </section>
 
       <section className="mx-auto w-full max-w-5xl flex-1 px-4 pb-12">
         <CountryGrid counts={countryCounts} />
+        <div className="mt-8 flex justify-center">
+          <HomeSearch />
+        </div>
       </section>
 
       <RecentOffersSection offers={offers.slice(0, RECENT_OFFERS_COUNT)} />

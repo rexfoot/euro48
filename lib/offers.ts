@@ -29,6 +29,11 @@ export type Offer = {
   // every offer from a scraped source.
   description: string | null;
   expires_at: string | null;
+  // RADAR HORS UE classification (2026-09-30)
+  eligibility: "A" | "B" | "C";
+  profession_id: string | null;
+  exclude_reasons: string[];
+  positive_signals: string[];
 };
 
 export type NewOffer = {
