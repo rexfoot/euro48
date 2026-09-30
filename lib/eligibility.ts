@@ -120,5 +120,5 @@ export function classifyOffer(title: string, description: string): Classificatio
     return { status: "A", professionId, excludeReasons, positiveSignals };
   }
 
-  return { status: "B", professionId, excludeReasons, positiveSignals };
+  return { status: "C", professionId: null, excludeReasons, positiveSignals };
 }
