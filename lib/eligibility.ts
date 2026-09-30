@@ -7,9 +7,24 @@ export interface ClassificationResult {
   positiveSignals: string[];
 }
 
-const SPONSORSHIP_PATTERNS = [
-  /visa\s*sponsorship/i,
-  /we\s*sponsor/i,
+const VERY_HIGH_PRIORITY_PATTERNS = [
+  /contratación\s+de\s+trabajadores\s+extranjeros/i,
+  /contratación\s+desde\s+el\s+extranjero/i,
+  /trabajadores\s+no\s+comunitarios/i,
+  /non[-\s]*eu\s+workers?/i,
+  /third[-\s]*country\s+nationals?/i,
+  /employer[-\s]*sponsored\s+workers?/i,
+  /overseas\s+recruitment/i,
+  /recruitment\s+from\s+outside\s+(?:the\s+)?eu/i,
+  /foreign\s+workers?\s+welcome/i,
+  /workers?\s+from\s+abroad/i,
+  /international\s+recruitment/i,
+  /visa\s+sponsorship/i,
+  /work\s*permit\s+sponsorship/i,
+  /employer\s+sponsorship/i,
+  /immigration\s+sponsorship/i,
+  /employer[-\s]*assisted\s+visa/i,
+  /we\s+sponsor/i,
   /sponsor/i,
   /relocation/i,
   /package\s*d'installation/i,
@@ -28,13 +43,11 @@ const SPONSORSHIP_PATTERNS = [
   /patrocinio/i,
   /visa\s*support/i,
   /work\s*visa/i,
-  /international\s*candidates?\s*welcome/i,
-  /foreign\s*workers?\s*welcome/i,
+  /international\s*candidates?\s+welcome/i,
   /no\s*eu\s*passport\s*required/i,
   /without\s*eu\s*passport/i,
   /candidats?\s*internationaux/i,
   /candidatos?\s*internacionales/i,
-  /international\s*recruitment/i,
   /mobilité\s*internationale/i,
   /movilidad\s*internacional/i,
 ];
@@ -75,7 +88,7 @@ export function classifyOffer(title: string, description: string): Classificatio
   const excludeReasons: string[] = [];
   const positiveSignals: string[] = [];
 
-  for (const pattern of SPONSORSHIP_PATTERNS) {
+  for (const pattern of VERY_HIGH_PRIORITY_PATTERNS) {
     if (pattern.test(text)) {
       positiveSignals.push(pattern.source);
     }
