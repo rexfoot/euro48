@@ -16,6 +16,21 @@ const PROFESSION_IDS = [
   "logistica", "cuidado",
 ] as const;
 
+const PROFESSION_NAMES: Record<(typeof PROFESSION_IDS)[number], Record<string, string>> = {
+  carnicero: { fr: "Boucher", es: "Carnicero", en: "Butcher" },
+  panadero: { fr: "Boulanger", es: "Panadero", en: "Baker" },
+  peluquero: { fr: "Coiffeur", es: "Peluquero", en: "Hairdresser" },
+  cocina: { fr: "Cuisine", es: "Cocina", en: "Kitchen" },
+  construccion: { fr: "Construction", es: "Construcción", en: "Construction" },
+  conductor: { fr: "Chauffeur", es: "Conductor", en: "Driver" },
+  mecanica: { fr: "Mécanique", es: "Mecánica", en: "Mechanic" },
+  limpieza: { fr: "Nettoyage", es: "Limpieza", en: "Cleaning" },
+  agricultura: { fr: "Agriculture", es: "Agricultura", en: "Agriculture" },
+  hosteleria: { fr: "Hôtellerie", es: "Hostelería", en: "Hospitality" },
+  logistica: { fr: "Logistique", es: "Logística", en: "Logistics" },
+  cuidado: { fr: "Aide à la personne", es: "Cuidado", en: "Care" },
+};
+
 export function RadarFilters({ offers }: { offers: RadarOffer[] }) {
   const { locale } = useLocale();
   const [profession, setProfession] = useState("");
@@ -37,7 +52,7 @@ export function RadarFilters({ offers }: { offers: RadarOffer[] }) {
             onClick={() => setProfession(profession === id ? "" : id)}
             className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${profession === id ? "border-emerald-400 bg-emerald-400/20 text-emerald-400" : "border-border bg-panel hover:border-emerald-400/50"}`}
           >
-            {id}
+            {PROFESSION_NAMES[id][locale]}
           </button>
         ))}
       </div>

@@ -5,6 +5,7 @@ import { RadarOfferCard } from "@/components/RadarOfferCard";
 import { RadarToggle } from "@/components/RadarToggle";
 import { RadarFilters } from "@/components/RadarFilters";
 import { pageAlternates } from "@/lib/seo";
+import { RadarPageContent } from "@/components/RadarPageContent";
 
 export const metadata: Metadata = {
   title: "RADAR HORS UE — Euro48",
@@ -24,38 +25,5 @@ export default async function RadarHorsUePage() {
     })
     .filter(r => r.status === "A" || r.status === "B");
 
-  return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-      <h1 className="text-2xl font-semibold">RADAR HORS UE</h1>
-
-      <div className="mt-3 rounded-xl border border-accent-amber/30 bg-accent-amber/10 p-4 text-sm text-accent-amber">
-        Ces offres n'exigent pas d'habiter déjà en UE, ni un permis de travail européen déjà obtenu. Ce n'est pas une garantie de visa.
-      </div>
-
-      <p className="mt-4 text-sm text-muted">
-        <span className="font-semibold text-accent-amber">+{radarOffers.length}</span> offres HORS UE
-      </p>
-
-      <div className="mt-6">
-        <RadarToggle />
-      </div>
-
-      <RadarFilters offers={radarOffers} />
-
-      <div className="mt-6 flex flex-col gap-3">
-        {radarOffers.length === 0 ? (
-          <p className="text-sm text-muted">Aucune offre confirmée cette semaine.</p>
-        ) : (
-          radarOffers.map(r => (
-            <RadarOfferCard
-              key={r.id}
-              offer={r}
-              status={r.status}
-              professionId={r.professionId}
-            />
-          ))
-        )}
-      </div>
-    </main>
-  );
+  return <RadarPageContent offers={radarOffers} />;
 }

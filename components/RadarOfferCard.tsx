@@ -6,6 +6,21 @@ import { useLocale } from "./LocaleProvider";
 import { t } from "@/lib/i18n";
 import { cityLabel } from "@/lib/offer-display";
 
+const PROFESSION_NAMES: Record<string, Record<string, string>> = {
+  carnicero: { fr: "Boucher", es: "Carnicero", en: "Butcher" },
+  panadero: { fr: "Boulanger", es: "Panadero", en: "Baker" },
+  peluquero: { fr: "Coiffeur", es: "Peluquero", en: "Hairdresser" },
+  cocina: { fr: "Cuisine", es: "Cocina", en: "Kitchen" },
+  construccion: { fr: "Construction", es: "Construcción", en: "Construction" },
+  conductor: { fr: "Chauffeur", es: "Conductor", en: "Driver" },
+  mecanica: { fr: "Mécanique", es: "Mecánica", en: "Mechanic" },
+  limpieza: { fr: "Nettoyage", es: "Limpieza", en: "Cleaning" },
+  agricultura: { fr: "Agriculture", es: "Agricultura", en: "Agriculture" },
+  hosteleria: { fr: "Hôtellerie", es: "Hostelería", en: "Hospitality" },
+  logistica: { fr: "Logistique", es: "Logística", en: "Logistics" },
+  cuidado: { fr: "Aide à la personne", es: "Cuidado", en: "Care" },
+};
+
 interface RadarOfferCardProps {
   offer: Offer;
   status: EligibilityStatus;
@@ -23,7 +38,7 @@ export function RadarOfferCard({ offer, status, professionId }: RadarOfferCardPr
         </span>
         {professionId && (
           <span className="rounded-full bg-border px-2 py-0.5 text-xs text-muted">
-            {professionId}
+            {PROFESSION_NAMES[professionId]?.[locale] ?? professionId}
           </span>
         )}
       </div>
