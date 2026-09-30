@@ -72,14 +72,15 @@ async function fetchDetail(id: string): Promise<EuresDetail | null> {
 export async function fetchEuresOffersForCountry(
   country: CountryCode,
   page = 1,
-  isOverBudget: () => boolean = () => false
+  isOverBudget: () => boolean = () => false,
+  keywords: string[] = []
 ): Promise<NewOffer[]> {
   const cityIndex = await getCityIndex();
   const body = JSON.stringify({
     resultsPerPage: RESULTS_PER_COUNTRY,
     page,
     sortSearch: "MOST_RECENT",
-    keywords: [],
+    keywords,
     publicationPeriod: "LAST_THREE_DAYS",
     occupationUris: [],
     skillUris: [],

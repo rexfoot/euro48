@@ -39,7 +39,7 @@ jobs:
             exit 1
           fi
 
-          RADAR_SOURCES="visasponsor eurostaffs nextleveljobs jobbatical germanyworkstay indeedradar linkedinradar wttj eurobrussels makeitingermany myvisajobs jobbankgc jobboom"
+          RADAR_SOURCES="visasponsor eurostaffs nextleveljobs jobbatical germanyworkstay eures"
           for source in $RADAR_SOURCES; do
             status=$(curl -s -o response.json -w "%{http_code}" -X POST \
               "https://euro48.com/api/worker/radar?source=$source" \

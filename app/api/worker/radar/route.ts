@@ -5,14 +5,8 @@ import { fetchEuroStaffsOffers } from "@/lib/sources/eurostaffs";
 import { fetchNextLevelJobsOffers } from "@/lib/sources/nextleveljobs";
 import { fetchJobbaticalOffers } from "@/lib/sources/jobbatical";
 import { fetchGermanyWorkStayOffers } from "@/lib/sources/germanyworkstay";
-import { fetchIndeedRadarOffers } from "@/lib/sources/indeedradar";
-import { fetchLinkedInRadarOffers } from "@/lib/sources/linkedinradar";
-import { fetchWTTJOffers } from "@/lib/sources/wttj";
-import { fetchEuroBrusselsOffers } from "@/lib/sources/eurobrussels";
-import { fetchMakeItInGermanyOffers } from "@/lib/sources/makeitingermany";
-import { fetchMyVisaJobsOffers } from "@/lib/sources/myvisajobs";
-import { fetchJobBankGCOffers } from "@/lib/sources/jobbankgc";
-import { fetchJobboomOffers } from "@/lib/sources/jobboom";
+import { fetchEuresOffersForCountry, EURES_COUNTRIES } from "@/lib/sources/eures";
+import { mapWithConcurrency } from "@/lib/concurrency";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -23,15 +17,16 @@ const RADAR_SOURCES: Record<string, () => Promise<import("@/lib/offers").NewOffe
   nextleveljobs: fetchNextLevelJobsOffers,
   jobbatical: fetchJobbaticalOffers,
   germanyworkstay: fetchGermanyWorkStayOffers,
-  indeedradar: fetchIndeedRadarOffers,
-  linkedinradar: fetchLinkedInRadarOffers,
-  wttj: fetchWTTJOffers,
-  eurobrussels: fetchEuroBrusselsOffers,
-  makeitingermany: fetchMakeItInGermanyOffers,
-  myvisajobs: fetchMyVisaJobsOffers,
-  jobbankgc: fetchJobBankGCOffers,
-  jobboom: fetchJobboomOffers,
+  eures: fetchEuresRadarOffers,
 };
+
+export async function fetchEuresRadarOffers(): Promise<import("@/lib/offers").NewOffer[]> {
+  const keywords = ["visa sponsorship", "work permit", "relocation", "international hire"];
+  const perCountry = await mapWithConcurrency(EURES_COUNTRIES, 3, async (country) => {
+    return fetchEuresOffersForCountry(country, 1, () => false, keywords);
+  });
+  return perCountry.flat();
+}
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");
