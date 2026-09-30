@@ -7,35 +7,7 @@ export interface ClassificationResult {
   positiveSignals: string[];
 }
 
-const OUTSIDE_VETO_PATTERNS = [
-  /work\s*permit/i,
-  /permit\s*to\s*work/i,
-  /right\s*to\s*work/i,
-  /arbeitserlaubnis/i,
-  /arbeitserlaubnis/i,
-  /titre\s*de\s*séjour/i,
-  /permis\s*de\s*travail/i,
-  /must\s*live\s*in/i,
-  /must\s*be\s*based\s*in/i,
-  /déjà\s*résid/i,
-  /already\s*resid/i,
-  /eu\s*\/\s*eea\s*only/i,
-  /eu\s*citizens\s*only/i,
-  /nationalité\s*ue/i,
-  /ue\s*\/\s*eee\s*obligatoire/i,
-  /empezar\s*mañana/i,
-  /vikariat/i,
-  /eu\s*passport/i,
-  /eu\s*citizen/i,
-  /citizens?\s*of\s*the\s*eu/i,
-  /residen(?:t|ce)\s+(?:in|of)\s+the\s+eu/i,
-  /based\s+in\s+the\s+eu/i,
-  /living\s+in\s+the\s+eu/i,
-  /already\s+in\s+europe/i,
-  /must\s+be\s+in\s+europe/i,
-];
-
-const POSITIVE_SIGNAL_PATTERNS = [
+const SPONSORSHIP_PATTERNS = [
   /visa\s*sponsorship/i,
   /we\s*sponsor/i,
   /sponsor/i,
@@ -60,6 +32,22 @@ const POSITIVE_SIGNAL_PATTERNS = [
   /foreign\s*workers?\s*welcome/i,
   /no\s*eu\s*passport\s*required/i,
   /without\s*eu\s*passport/i,
+  /candidats?\s*internationaux/i,
+  /candidatos?\s*internacionales/i,
+  /international\s*recruitment/i,
+  /mobilité\s*internationale/i,
+  /movilidad\s*internacional/i,
+];
+
+const EU_ONLY_VETO_PATTERNS = [
+  /eu\s*\/\s*eea\s*only/i,
+  /eu\s*citizens?\s*only/i,
+  /nationalité\s*ue/i,
+  /ue\s*\/\s*eee\s*obligatoire/i,
+  /eu\s*passport\s*only/i,
+  /citizens?\s*of\s*the\s*eu\s*only/i,
+  /must\s+be\s+(?:a\s+)?(?:eu|eea)\s+citizen/i,
+  /only\s+eu\s+citizens?/i,
 ];
 
 interface ProfessionDef {
@@ -87,20 +75,20 @@ export function classifyOffer(title: string, description: string): Classificatio
   const excludeReasons: string[] = [];
   const positiveSignals: string[] = [];
 
-  for (const pattern of OUTSIDE_VETO_PATTERNS) {
+  for (const pattern of SPONSORSHIP_PATTERNS) {
+    if (pattern.test(text)) {
+      positiveSignals.push(pattern.source);
+    }
+  }
+
+  for (const pattern of EU_ONLY_VETO_PATTERNS) {
     if (pattern.test(text)) {
       excludeReasons.push(pattern.source);
     }
   }
 
-  if (excludeReasons.length > 0) {
+  if (excludeReasons.length > 0 && positiveSignals.length === 0) {
     return { status: "C", professionId: null, excludeReasons, positiveSignals };
-  }
-
-  for (const pattern of POSITIVE_SIGNAL_PATTERNS) {
-    if (pattern.test(text)) {
-      positiveSignals.push(pattern.source);
-    }
   }
 
   let professionId: string | null = null;
