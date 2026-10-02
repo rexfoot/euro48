@@ -9,11 +9,16 @@ export function RadarToggle() {
   const router = useRouter();
   const { locale } = useLocale();
   const [count, setCount] = useState<number | null>(null);
+  const [gulfCount, setGulfCount] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/radar/count")
       .then(r => r.json())
       .then(d => setCount(d.count ?? 0))
+      .catch(() => {});
+    fetch("/api/golfo/count")
+      .then(r => r.json())
+      .then(d => setGulfCount(d.count ?? 0))
       .catch(() => {});
   }, []);
 
@@ -36,6 +41,18 @@ export function RadarToggle() {
           {count !== null && (
             <span className="ml-1 rounded-full bg-emerald-400/20 px-1.5 py-0.5 text-xs font-semibold text-emerald-400">
               {count}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/golfo")}
+          className="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-accent-amber transition-colors hover:opacity-80"
+        >
+          🏜️ {t(locale, "golfo_toggle")}
+          {gulfCount !== null && (
+            <span className="ml-1 rounded-full bg-accent-amber/20 px-1.5 py-0.5 text-xs font-semibold text-accent-amber">
+              {gulfCount}
             </span>
           )}
         </button>

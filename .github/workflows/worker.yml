@@ -51,3 +51,18 @@ jobs:
               FAILED="$FAILED radar-$source"
             fi
           done
+
+          # Golfo section (gulf_offers table) — separate from everything
+          # above, only once per hour (6 Jooble calls per run, one per Gulf
+          # country) to stay well within Jooble's free tier.
+          if [ "$(date -u +%M)" = "00" ]; then
+            status=$(curl -s -o response.json -w "%{http_code}" -X POST \
+              "https://euro48.com/api/worker/gulf" \
+              -H "Authorization: Bearer ${{ secrets.WORKER_SECRET }}")
+            echo "== GOLFO jooble: HTTP $status =="
+            cat response.json
+            echo
+            if [ "$status" -ne 200 ]; then
+              echo "Golfo worker call failed (non-fatal, same as RADAR sources above)"
+            fi
+          fi

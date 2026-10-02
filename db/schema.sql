@@ -137,6 +137,34 @@ CREATE TABLE IF NOT EXISTS alert_deliveries (
   PRIMARY KEY (subscription_id, offer_id, channel)
 );
 
+-- "Golfo" section (2026-10-02): job offers physically located in rich Gulf
+-- countries (AE, SA, QA, KW, BH, OM) — NOT part of the EU 48h radar or
+-- RADAR HORS UE (that's EU offers open to non-EU candidates; this is a
+-- different, separate thing: jobs actually in the Gulf). Its own table
+-- rather than reusing `offers` because offers_country_code_allowed below
+-- is a closed CHECK constraint on the 18 EU/EEA codes per spec section 12 —
+-- this keeps that guarantee intact rather than widening it.
+CREATE TABLE IF NOT EXISTS gulf_offers (
+  id              TEXT PRIMARY KEY,
+  title_original  TEXT NOT NULL,
+  company         TEXT NOT NULL,
+  country_code    TEXT NOT NULL,
+  city            TEXT NOT NULL,
+  specialty       TEXT NOT NULL,
+  url             TEXT NOT NULL,
+  source          TEXT NOT NULL,
+  published_at    TIMESTAMPTZ NOT NULL,
+  fingerprint     TEXT NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS gulf_offers_fingerprint_unique ON gulf_offers (fingerprint);
+CREATE INDEX IF NOT EXISTS gulf_offers_published_at_desc ON gulf_offers (published_at DESC);
+
+ALTER TABLE gulf_offers
+  ADD CONSTRAINT gulf_offers_country_code_allowed
+  CHECK (country_code IN ('AE','SA','QA','KW','BH','OM'));
+
 -- Job/city refinement for an alert created straight from a search
 -- (2026-09-27) — both optional, NULL means "no restriction on this
 -- dimension". Existing specialty+country-only subscriptions from the

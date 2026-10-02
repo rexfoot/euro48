@@ -83,6 +83,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     radar_no_offers: "Aucune offre confirmée cette semaine.",
     radar_badge_confirmed: "HORS UE",
     radar_badge_unverified: "A verificar",
+    golfo_toggle: "GOLFE",
+    golfo_title: "EMPLOIS DANS LE GOLFE",
+    golfo_disclaimer: "Offres réelles situées aux Émirats, en Arabie saoudite, au Qatar, au Koweït, à Bahreïn et à Oman. Ce ne sont pas des offres en Europe — vérifie toi-même les conditions de visa et de contrat avant de postuler.",
+    golfo_count_suffix: "offres dans le Golfe",
+    golfo_no_offers: "Aucune offre disponible pour le moment.",
   },
   es: {
     counter_prefix: "+",
@@ -160,6 +165,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     radar_no_offers: "Ninguna oferta confirmada esta semana.",
     radar_badge_confirmed: "HORS UE",
     radar_badge_unverified: "A verificar",
+    golfo_toggle: "GOLFO",
+    golfo_title: "EMPLEOS EN EL GOLFO",
+    golfo_disclaimer: "Ofertas reales ubicadas en Emiratos, Arabia Saudí, Catar, Kuwait, Baréin y Omán. No son ofertas en Europa — revisa tú mismo las condiciones de visado y contrato antes de aplicar.",
+    golfo_count_suffix: "ofertas en el Golfo",
+    golfo_no_offers: "Ninguna oferta disponible por ahora.",
   },
   en: {
     counter_prefix: "+",
@@ -237,6 +247,11 @@ export const UI: Record<Locale, Record<string, string>> = {
     radar_no_offers: "No confirmed offers this week.",
     radar_badge_confirmed: "HORS UE",
     radar_badge_unverified: "To verify",
+    golfo_toggle: "GULF",
+    golfo_title: "GULF JOBS",
+    golfo_disclaimer: "Real offers located in the UAE, Saudi Arabia, Qatar, Kuwait, Bahrain and Oman. These are not jobs in Europe — check visa and contract terms yourself before applying.",
+    golfo_count_suffix: "Gulf offers",
+    golfo_no_offers: "No offers available right now.",
   },
 };
 
