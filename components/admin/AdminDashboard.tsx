@@ -140,11 +140,32 @@ export function AdminDashboard() {
     }
   }
 
+  function missingFieldError(): string | null {
+    if (!form.title.trim()) return "Falta el título del puesto.";
+    if (!form.company.trim()) return "Falta el nombre de la empresa.";
+    if (!form.countryCode) return "Falta elegir un país.";
+    if (!form.city.trim()) return "Falta la ciudad.";
+    if (!form.specialty) return "Falta elegir una categoría.";
+    if (!form.contact.trim()) return "Falta el enlace o contacto.";
+    return null;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     setNotice(null);
+
+    // The browser's own "required" validation can fail silently on some
+    // mobile browsers (no visible message, form just doesn't submit), so
+    // we check again here and always show a clear message ourselves.
+    const missing = missingFieldError();
+    if (missing) {
+      setError(missing);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setSaving(true);
 
     const payload = {
       title: form.title,
